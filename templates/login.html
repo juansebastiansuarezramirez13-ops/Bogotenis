@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block titulo %}Iniciar sesion{% endblock %}
+
+{% block contenido %}
+<section class="auth-hero">
+    <div class="hero-emoji-carousel">
+        <span class="sliding-emoji">&#128095;</span>
+        <span class="sliding-emoji">&#129406;</span>
+        <span class="sliding-emoji">&#128098;</span>
+        <span class="sliding-emoji">&#128096;</span>
+        <span class="sliding-emoji">&#129407;</span>
+        <span class="sliding-emoji">&#128095;</span>
+        <span class="sliding-emoji">&#129406;</span>
+        <span class="sliding-emoji">&#128098;</span>
+    </div>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h2>BOGO<span>TENIS</span></h2>
+                <p>Inicia sesion en tu cuenta oficial</p>
+            </div>
+            <form method="POST" action="{{ url_for('login') }}">
+                <div class="auth-input-group">
+                    <label><i class="fas fa-envelope"></i> Correo Electronico</label>
+                    <input type="email" name="correo" placeholder="ejemplo@correo.com" required>
+                </div>
+                <div class="auth-input-group">
+                    <label><i class="fas fa-lock"></i> Contrasena</label>
+                    <input type="password" name="contrasena" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" required>
+                </div>
+                <button type="submit" class="btn-auth-submit">Iniciar Sesion</button>
+            </form>
+            <div class="auth-switch">
+                No tienes una cuenta? <a href="{{ url_for('registro') }}">Registrate aqui</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

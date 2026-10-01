@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block titulo %}Admin Pedidos{% endblock %}
+
+{% block contenido %}
+<section class="container py-5" style="margin-top:60px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold" style="color:var(--primary);">Pedidos</h2>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover" style="background:white;border-radius:12px;overflow:hidden;">
+            <thead style="background:var(--primary);color:white;">
+                <tr>
+                    <th>ID</th>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ped in pedidos %}
+                <tr>
+                    <td>#{{ ped.id }}</td>
+                    <td>{{ ped.fecha.strftime('%d/%m/%Y %H:%M') if ped.fecha else '-' }}</td>
+                    <td>{{ ped.cliente }}</td>
+                    <td>${{ '{:,.0f}'.format(ped.total) }}</td>
+                    <td>
+                        {% if ped.estado == 'pendiente' %}
+                            <span class="badge bg-warning text-dark">{{ ped.estado }}</span>
+                        {% elif ped.estado == 'confirmado' %}
+                            <span class="badge bg-info">{{ ped.estado }}</span>
+                        {% elif ped.estado == 'enviado' %}
+                            <span class="badge bg-primary">{{ ped.estado }}</span>
+                        {% elif ped.estado == 'entregado' %}
+                            <span class="badge bg-success">{{ ped.estado }}</span>
+                        {% elif ped.estado == 'cancelado' %}
+                            <span class="badge bg-danger">{{ ped.estado }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ ped.estado }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

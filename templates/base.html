@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block titulo %}BOGOTENIS{% endblock %} | Tienda Oficial</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <a href="{{ url_for('index') }}" style="text-decoration:none;">
+                    <h1 style="color: var(--accent); margin:0; font-size: 24px; cursor: pointer;">
+                        BOGO<span style="color:white">TENIS</span>
+                    </h1>
+                </a>
+            </div>
+            <nav class="main-nav">
+                <a href="{{ url_for('index') }}">Inicio</a>
+                <a href="{{ url_for('index') }}#marcas-section">Categorias</a>
+                <a href="{{ url_for('ofertas') }}" class="nav-offers-link">Ofertas %</a>
+                {% if session.get('nombre') %}
+                    {% if session.get('rol') == 'admin' %}
+                        <a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-cog"></i> Admin</a>
+                    {% else %}
+                        <a href="#"><i class="fas fa-user"></i> {{ session.nombre }}</a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Salir</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}"><i class="fas fa-user"></i> Mi Cuenta</a>
+                {% endif %}
+                <a href="#" id="nav-support-link" onclick="openSupportModal(event)"><i class="fas fa-headset"></i> Soporte</a>
+            </nav>
+            <div class="header-actions">
+                <button class="icon-btn cart-btn" id="btn-cart-toggle">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count" id="cart-count">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div style="position:fixed;top:80px;right:20px;z-index:9999;min-width:300px;">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert" style="background:var(--primary);color:white;border:1px solid var(--accent);border-radius:8px;">
+                        {{ message }}
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Cart Sidebar -->
+    <div id="cart-sidebar" class="cart-sidebar">
+        <div class="cart-header-side">
+            <h3>Tu Carrito</h3>
+            <button id="close-cart-sidebar" class="close-btn">&times;</button>
+        </div>
+        <div id="cart-items-container" class="cart-items-list"></div>
+        <div class="cart-footer-side">
+            <div class="cart-total-row">
+                <span>Total:</span>
+                <span id="cart-total-price">$0</span>
+            </div>
+            <button class="order-btn mb-2" id="order-btn" onclick="finalizarPedido()">
+                <span class="order-btn__text"><i class="fas fa-shopping-cart"></i> Finalizar Pedido</span>
+                <span class="order-btn__truck">
+                    <span class="order-btn__headlights"><span class="order-btn__headlight"></span><span class="order-btn__headlight"></span></span>
+                    &#128666;
+                </span>
+                <span class="order-btn__road"></span>
+                <span class="order-btn__spinner"></span>
+                <span class="order-btn__check" style="display:none;"><i class="fas fa-check-circle"></i> Pedido Enviado</span>
+            </button>
+            <button class="btn btn-outline-secondary w-100 btn-sm" id="clear-cart">Vaciar Carrito</button>
+        </div>
+    </div>
+
+    {% block contenido %}{% endblock %}
+
+    <!-- Support Modal -->
+    <div class="support-overlay" id="support-modal">
+        <div class="support-modal-card">
+            <button class="support-close" onclick="closeSupportModal()">&times;</button>
+            <div class="support-header">
+                <div class="support-icon-title"><i class="fas fa-headset"></i></div>
+                <h3>Centro de Soporte</h3>
+                <p>Tienes dudas o inconvenientes? Elige como comunicarte con nosotros:</p>
+            </div>
+            <div class="support-options-list">
+                <a href="https://wa.me/573004486406" target="_blank" class="support-item-link">
+                    <div class="support-item-icon whatsapp-color"><i class="fab fa-whatsapp"></i></div>
+                    <div class="support-item-info">
+                        <h4>Linea Telefonica / WhatsApp</h4>
+                        <p>+57 300 448 6406</p>
+                    </div>
+                    <i class="fas fa-chevron-right support-arrow"></i>
+                </a>
+                <a href="mailto:bogotenis.sport@gmail.com" class="support-item-link">
+                    <div class="support-item-icon email-color"><i class="fas fa-envelope"></i></div>
+                    <div class="support-item-info">
+                        <h4>Correo Electronico</h4>
+                        <p>bogotenis.sport@gmail.com</p>
+                    </div>
+                    <i class="fas fa-chevron-right support-arrow"></i>
+                </a>
+            </div>
+            <div class="support-footer-text">
+                <p><i class="fas fa-clock"></i> Envios y soporte digital 24/7 a todo el pais.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="payment-overlay" id="payment-modal">
+        <div class="payment-modal">
+            <div class="payment-modal-header">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <span class="payment-header-icon"><i class="fas fa-credit-card"></i></span>
+                    <h3 id="payment-modal-title">Metodo de Pago</h3>
+                </div>
+                <button class="payment-close-btn" onclick="closePaymentModal()">&times;</button>
+            </div>
+            <div class="payment-modal-body" id="payment-body">
+
+                <!-- Banner PAGA AQUI -->
+                <div class="paga-aqui" id="paga-aqui-banner" style="display:none;">
+                    <span class="paga-aqui-text">PAGA AQUI</span>
+                    <div class="paga-aqui-icons">
+                        <i class="fab fa-cc-visa"></i>
+                        <i class="fab fa-cc-mastercard"></i>
+                        <i class="fas fa-university"></i>
+                        <i class="fas fa-money-bill-wave"></i>
+                        <i class="fas fa-mobile-alt"></i>
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                </div>
+
+                <!-- PASO 1: Seleccion -->
+                <div id="payment-step-select">
+                    <div class="payment-total-bar">
+                        <span>Total a pagar:</span>
+                        <span id="payment-total-display">$0</span>
+                    </div>
+                    <div class="payment-methods-label">Selecciona tu metodo de pago</div>
+                    <div class="payment-methods-grid" id="payment-methods">
+                        <div class="payment-method-card" data-method="visa" onclick="selectPaymentMethod(this)">
+                            <span class="pm-icon"><i class="fab fa-cc-visa" style="color:#1a1f71;"></i></span>
+                            <span class="pm-name">Visa</span>
+                        </div>
+                        <div class="payment-method-card" data-method="mastercard" onclick="selectPaymentMethod(this)">
+                            <span class="pm-icon"><i class="fab fa-cc-mastercard" style="color:#eb001b;"></i></span>
+                            <span class="pm-name">Mastercard</span>
+                        </div>
+                        <div class="payment-method-card" data-method="pse" onclick="selectPaymentMethod(this)">
+                            <span class="pm-icon"><i class="fas fa-university" style="color:#1a5276;"></i></span>
+                            <span class="pm-name">PSE</span>
+                        </div>
+                        <div class="payment-method-card" data-method="efecty" onclick="selectPaymentMethod(this)">
+                            <span class="pm-icon"><i class="fas fa-money-bill-wave" style="color:#27ae60;"></i></span>
+                            <span class="pm-name">Efecty</span>
+                        </div>
+                        <div class="payment-method-card" data-method="nequi" onclick="selectPaymentMethod(this)">
+                            <span class="pm-icon"><i class="fas fa-mobile-alt" style="color:#8b5cf6;"></i></span>
+                            <span class="pm-name">Nequi</span>
+                        </div>
+                        <div class="payment-method-card" data-method="daviplata" onclick="selectPaymentMethod(this)">
+                            <span class="pm-icon"><i class="fas fa-wallet" style="color:#ea580c;"></i></span>
+                            <span class="pm-name">Daviplata</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PASO 2: Formulario Visa/Mastercard -->
+                <div id="payment-step-card" style="display:none;">
+                    <button class="btn-back-pay" onclick="backToMethods()"><i class="fas fa-arrow-left"></i> Volver</button>
+                    <div class="pay-form-brand" id="card-brand-display"></div>
+                    <div class="pay-form-group">
+                        <label>Numero de Tarjeta</label>
+                        <input type="text" id="card-number" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatCardNumber(this)">
+                    </div>
+                    <div class="pay-form-row">
+                        <div class="pay-form-group">
+                            <label>Vencimiento</label>
+                            <input type="text" id="card-expiry" placeholder="MM/AA" maxlength="5" oninput="formatExpiry(this)">
+                        </div>
+                        <div class="pay-form-group">
+                            <label>CVV</label>
+                            <input type="password" id="card-cvv" placeholder="***" maxlength="4">
+                        </div>
+                    </div>
+                    <div class="pay-form-group">
+                        <label>Nombre del Titular</label>
+                        <input type="text" id="card-name" placeholder="Como aparece en la tarjeta">
+                    </div>
+                    <div class="pay-form-total">Total: <span id="card-total-display"></span></div>
+                    <button class="btn-pay-now" id="btn-pay-card" onclick="processPayment()">
+                        <i class="fas fa-lock"></i> Pagar con <span id="card-pay-label"></span>
+                    </button>
+                </div>
+
+                <!-- PASO 3: Formulario PSE -->
+                <div id="payment-step-pse" style="display:none;">
+                    <button class="btn-back-pay" onclick="backToMethods()"><i class="fas fa-arrow-left"></i> Volver</button>
+                    <div class="pay-form-brand"><i class="fas fa-university" style="color:#1a5276;"></i> Pago PSE</div>
+                    <div class="pay-form-group">
+                        <label>Banco</label>
+                        <select id="pse-bank">
+                            <option value="">Selecciona tu banco</option>
+                            <option>Banco de Bogota</option>
+                            <option>Bancolombia</option>
+                            <option>Banco Davivienda</option>
+                            <option>Banco de Occidente</option>
+                            <option>Banco Popular</option>
+                            <option>Banco AV Villas</option>
+                            <option>Banco Falabella</option>
+                            <option>Banco Pichincha</option>
+                            <option>Nequi (Bancolombia)</option>
+                        </select>
+                    </div>
+                    <div class="pay-form-group">
+                        <label>Tipo de Documento</label>
+                        <select id="pse-doctype">
+                            <option value="CC">Cedula de Ciudadania</option>
+                            <option value="CE">Cedula de Extranjeria</option>
+                            <option value="NIT">NIT</option>
+                        </select>
+                    </div>
+                    <div class="pay-form-group">
+                        <label>Numero de Documento</label>
+                        <input type="text" id="pse-docnum" placeholder="Ej: 1234567890">
+                    </div>
+                    <div class="pay-form-group">
+                        <label>Correo Electronico</label>
+                        <input type="email" id="pse-email" placeholder="Para enviar el comprobante">
+                    </div>
+                    <div class="pay-form-total">Total: <span id="pse-total-display"></span></div>
+                    <button class="btn-pay-now" id="btn-pay-pse" onclick="processPayment()">
+                        <i class="fas fa-university"></i> Pagar con PSE
+                    </button>
+                </div>
+
+                <!-- PASO 4: Formulario Efecty -->
+                <div id="payment-step-efecty" style="display:none;">
+                    <button class="btn-back-pay" onclick="backToMethods()"><i class="fas fa-arrow-left"></i> Volver</button>
+                    <div class="pay-form-brand"><i class="fas fa-money-bill-wave" style="color:#27ae60;"></i> Pago Efecty</div>
+                    <div class="pay-form-info">Presenta este codigo en cualquier punto Efecty para pagar tu pedido.</div>
+                    <div class="pay-form-group">
+                        <label>Tipo de Documento</label>
+                        <select id="efecty-doctype">
+                            <option value="CC">Cedula de Ciudadania</option>
+                            <option value="CE">Cedula de Extranjeria</option>
+                        </select>
+                    </div>
+                    <div class="pay-form-group">
+                        <label>Numero de Documento</label>
+                        <input type="text" id="efecty-docnum" placeholder="Ej: 1234567890">
+                    </div>
+                    <div class="pay-form-group">
+                        <label>Telefono de Contacto</label>
+                        <input type="tel" id="efecty-phone" placeholder="Ej: 300 123 4567">
+                    </div>
+                    <div class="pay-form-total">Total: <span id="efecty-total-display"></span></div>
+                    <button class="btn-pay-now" id="btn-pay-efecty" onclick="processPayment()">
+                        <i class="fas fa-money-bill-wave"></i> Generar Codigo de Pago
+                    </button>
+                </div>
+
+                <!-- PASO 5: Formulario Nequi -->
+                <div id="payment-step-nequi" style="display:none;">
+                    <button class="btn-back-pay" onclick="backToMethods()"><i class="fas fa-arrow-left"></i> Volver</button>
+                    <div class="pay-form-brand"><i class="fas fa-mobile-alt" style="color:#8b5cf6;"></i> Nequi</div>
+                    <div class="pay-form-info">Se enviara una solicitud de pago a tu cuenta Nequi.</div>
+                    <div class="pay-form-group">
+                        <label>Numero de Celular</label>
+                        <input type="tel" id="nequi-phone" placeholder="Ej: 300 123 4567" maxlength="10">
+                    </div>
+                    <div class="pay-form-group">
+                        <label>Llave Dinamica</label>
+                        <input type="password" id="nequi-key" placeholder="Ingresa tu llave dinamica" maxlength="6">
+                        <small class="pay-form-hint">La llave la encuentras en tu app Nequi en Configuracion > Seguridad</small>
+                    </div>
+                    <div class="pay-form-total">Total: <span id="nequi-total-display"></span></div>
+                    <button class="btn-pay-now" id="btn-pay-nequi" onclick="processPayment()">
+                        <i class="fas fa-mobile-alt"></i> Confirmar con Nequi
+                    </button>
+                </div>
+
+                <!-- PASO 6: Formulario Daviplata -->
+                <div id="payment-step-daviplata" style="display:none;">
+                    <button class="btn-back-pay" onclick="backToMethods()"><i class="fas fa-arrow-left"></i> Volver</button>
+                    <div class="pay-form-brand"><i class="fas fa-wallet" style="color:#ea580c;"></i> Daviplata</div>
+                    <div class="pay-form-info">Recibiras una notificacion en tu app para confirmar el pago.</div>
+                    <div class="pay-form-group">
+                        <label>Numero de Celular</label>
+                        <input type="tel" id="daviplata-phone" placeholder="Ej: 300 123 4567" maxlength="10">
+                    </div>
+                    <div class="pay-form-group">
+                        <label>PIN de Seguridad</label>
+                        <input type="password" id="daviplata-pin" placeholder="PIN de 6 digitos" maxlength="6">
+                        <small class="pay-form-hint">Tu PIN de Daviplata (no es el PIN de tu tarjeta)</small>
+                    </div>
+                    <div class="pay-form-total">Total: <span id="daviplata-total-display"></span></div>
+                    <button class="btn-pay-now" id="btn-pay-daviplata" onclick="processPayment()">
+                        <i class="fas fa-wallet"></i> Pagar con Daviplata
+                    </button>
+                </div>
+
+                <!-- PASO 7: Procesando -->
+                <div id="payment-step-processing" style="display:none;">
+                    <div class="pay-processing">
+                        <div class="pay-processing-spinner">
+                            <div class="pay-spinner-ring"></div>
+                            <i class="fas fa-shield-alt pay-spinner-icon"></i>
+                        </div>
+                        <h3 id="processing-title">Procesando pago...</h3>
+                        <p id="processing-subtitle">Verificando datos con <span id="processing-provider"></span></p>
+                        <div class="pay-processing-steps">
+                            <div class="pay-step" id="pstep-1"><i class="fas fa-check-circle"></i> Validando informacion</div>
+                            <div class="pay-step" id="pstep-2"><i class="fas fa-check-circle"></i> Conectando con el gateway</div>
+                            <div class="pay-step" id="pstep-3"><i class="fas fa-check-circle"></i> Confirmando transaccion</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PASO 8: Exito -->
+                <div id="payment-step-success" style="display:none;">
+                    <div class="payment-success-content">
+                        <div class="payment-success-icon"><i class="fas fa-check-circle"></i></div>
+                        <h3>Pago Exitoso!</h3>
+                        <p id="success-message">Tu pedido ha sido procesado correctamente.</p>
+                        <div class="receipt-number" id="success-receipt"><i class="fas fa-receipt"></i> </div>
+                        <br><br>
+                        <button class="btn-download-receipt" onclick="downloadReceiptAgain()"><i class="fas fa-file-pdf"></i> Descargar Recibo PDF</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h3>Contacto</h3>
+                <p><i class="fas fa-phone-alt"></i> +57 300 448 6406</p>
+                <p><i class="fas fa-envelope"></i> bogotenis.sport@gmail.com</p>
+                <p><i class="fas fa-clock"></i> Envios 24/7 a todo el pais</p>
+            </div>
+            <div class="footer-section">
+                <h3>Newsletter</h3>
+                <p>Suscribete y recibe ofertas exclusivas directamente en tu bandeja.</p>
+                <div class="newsletter-form">
+                    <input type="email" id="newsletter-correo" placeholder="Tu correo electronico" aria-label="Tu correo electronico">
+                    <button type="button" aria-label="Enviar newsletter" onclick="suscribirNewsletter()"><i class="fas fa-paper-plane"></i></button>
+                </div>
+                <div id="newsletter-mensaje" style="margin-top:10px;font-size:13px;"></div>
+                <div class="payment-icons mt-3">
+                    <span class="badge bg-light text-dark mx-1">VISA</span>
+                    <span class="badge bg-light text-dark mx-1">Mastercard</span>
+                    <span class="badge bg-light text-dark mx-1">Efecty</span>
+                    <span class="badge bg-light text-dark mx-1">PSE</span>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 BOGOTENIS. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+    var IMG_BASE = "{{ url_for('static', filename='img/') }}";
+    var PLACEHOLDER_IMG = IMG_BASE + 'placeholder.svg';
+    var cart = [];
+    var formatter = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
+
+    function imagenUrl(nombreArchivo) { return IMG_BASE + nombreArchivo; }
+
+    function fallbackImagen(el) {
+        if (!el) return;
+        if (el.src.lastIndexOf('placeholder.svg') === -1) el.src = PLACEHOLDER_IMG;
+    }
+
+    function updateCartUI() {
+        var c = document.getElementById('cart-items-container');
+        var tc = document.getElementById('cart-count');
+        var tp = document.getElementById('cart-total-price');
+        if (!c) return;
+        var total = 0;
+        c.innerHTML = '';
+        cart.forEach(function(item, index) {
+            total += item.price;
+            c.innerHTML += '<div class="cart-item"><div class="cart-item-details"><div class="cart-item-title">' + item.brand + ' - ' + item.name + '</div><div class="cart-item-meta">Talla: CO ' + item.selectedSize + ' | Color: <span class="cart-color-dot" style="background:' + item.selectedColor + ';"></span></div><div class="cart-item-price">' + formatter.format(item.price) + '</div></div><button class="cart-item-remove" title="Eliminar" onclick="removeFromCart(' + index + ')"><i class="fas fa-trash-alt"></i></button></div>';
+        });
+        tc.innerText = cart.length;
+        tp.innerText = formatter.format(total);
+    }
+
+    function removeFromCart(index) { cart.splice(index, 1); updateCartUI(); }
+
+    function finalizarPedido() {
+        if (cart.length === 0) { alert("El carrito esta vacio"); return; }
+        var orderBtn = document.getElementById('order-btn');
+        if (orderBtn.classList.contains('order-btn--loading') || orderBtn.classList.contains('order-btn--done')) return;
+        orderBtn.classList.add('order-btn--loading');
+        setTimeout(function() {
+            orderBtn.classList.remove('order-btn--loading');
+            orderBtn.classList.add('order-btn--done');
+            var checkEl = orderBtn.querySelector('.order-btn__check');
+            if (checkEl) checkEl.style.display = 'inline-flex';
+            var textEl = orderBtn.querySelector('.order-btn__text');
+            if (textEl) textEl.style.display = 'none';
+            openPaymentModal();
+            setTimeout(function() {
+                orderBtn.classList.remove('order-btn--done');
+                if (checkEl) checkEl.style.display = 'none';
+                if (textEl) textEl.style.display = 'inline';
+            }, 3000);
+        }, 2400);
+    }
+
+    var selectedPaymentMethod = '';
+    var methodNames = { visa:'Visa', mastercard:'Mastercard', pse:'PSE', efecty:'Efecty', nequi:'Nequi', daviplata:'Daviplata' };
+
+    function showPaymentStep(step) {
+        var steps = ['payment-step-select','payment-step-card','payment-step-pse','payment-step-efecty','payment-step-nequi','payment-step-daviplata','payment-step-processing','payment-step-success'];
+        steps.forEach(function(s) { var el = document.getElementById(s); if (el) el.style.display = 'none'; });
+        var el = document.getElementById('payment-step-' + step);
+        if (el) el.style.display = 'block';
+        var banner = document.getElementById('paga-aqui-banner');
+        if (step === 'card' || step === 'pse' || step === 'efecty' || step === 'nequi' || step === 'daviplata') {
+            banner.style.display = 'flex';
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+
+    function openPaymentModal() {
+        var total = 0;
+        cart.forEach(function(item) { total += item.price; });
+        var totalFmt = formatter.format(total);
+        document.getElementById('payment-total-display').innerText = totalFmt;
+        document.getElementById('card-total-display').innerText = totalFmt;
+        document.getElementById('pse-total-display').innerText = totalFmt;
+        document.getElementById('efecty-total-display').innerText = totalFmt;
+        document.getElementById('nequi-total-display').innerText = totalFmt;
+        document.getElementById('daviplata-total-display').innerText = totalFmt;
+        selectedPaymentMethod = '';
+        document.querySelectorAll('.payment-method-card').forEach(function(c) { c.classList.remove('selected'); });
+        document.getElementById('payment-modal-title').innerText = 'Metodo de Pago';
+        showPaymentStep('select');
+        document.getElementById('payment-modal').classList.add('active');
+    }
+
+    function closePaymentModal() { document.getElementById('payment-modal').classList.remove('active'); }
+
+    function backToMethods() {
+        selectedPaymentMethod = '';
+        document.querySelectorAll('.payment-method-card').forEach(function(c) { c.classList.remove('selected'); });
+        document.getElementById('payment-modal-title').innerText = 'Metodo de Pago';
+        clearFormErrors();
+        showPaymentStep('select');
+    }
+
+    function selectPaymentMethod(el) {
+        document.querySelectorAll('.payment-method-card').forEach(function(c) { c.classList.remove('selected'); });
+        el.classList.add('selected');
+        selectedPaymentMethod = el.dataset.method;
+
+        if (selectedPaymentMethod === 'visa' || selectedPaymentMethod === 'mastercard') {
+            document.getElementById('card-brand-display').innerHTML = '<i class="fab fa-cc-' + selectedPaymentMethod + '" style="color:' + (selectedPaymentMethod === 'visa' ? '#1a1f71' : '#eb001b') + ';font-size:32px;"></i> ' + methodNames[selectedPaymentMethod];
+            document.getElementById('card-pay-label').innerText = methodNames[selectedPaymentMethod];
+            document.getElementById('payment-modal-title').innerText = 'Pagar con ' + methodNames[selectedPaymentMethod];
+            showPaymentStep('card');
+        } else if (selectedPaymentMethod === 'pse') {
+            document.getElementById('payment-modal-title').innerText = 'Pagar con PSE';
+            showPaymentStep('pse');
+        } else if (selectedPaymentMethod === 'efecty') {
+            document.getElementById('payment-modal-title').innerText = 'Pagar con Efecty';
+            showPaymentStep('efecty');
+        } else if (selectedPaymentMethod === 'nequi') {
+            document.getElementById('payment-modal-title').innerText = 'Pagar con Nequi';
+            showPaymentStep('nequi');
+        } else if (selectedPaymentMethod === 'daviplata') {
+            document.getElementById('payment-modal-title').innerText = 'Pagar con Daviplata';
+            showPaymentStep('daviplata');
+        }
+    }
+
+    function formatCardNumber(input) {
+        var v = input.value.replace(/\D/g, '').substring(0, 16);
+        var formatted = v.replace(/(\d{4})(?=\d)/g, '$1 ');
+        input.value = formatted;
+    }
+
+    function formatExpiry(input) {
+        var v = input.value.replace(/\D/g, '').substring(0, 4);
+        if (v.length >= 2) v = v.substring(0, 2) + '/' + v.substring(2);
+        input.value = v;
+    }
+
+    function validatePaymentForm() {
+        if (selectedPaymentMethod === 'visa' || selectedPaymentMethod === 'mastercard') {
+            var num = document.getElementById('card-number').value.replace(/\s/g, '');
+            var exp = document.getElementById('card-expiry').value;
+            var cvv = document.getElementById('card-cvv').value;
+            var name = document.getElementById('card-name').value.trim();
+            if (num.length < 13) { alert('Numero de tarjeta invalido'); return false; }
+            if (exp.length < 5) { alert('Fecha de vencimiento invalida'); return false; }
+            if (cvv.length < 3) { alert('CVV invalido'); return false; }
+            if (!name) { alert('Nombre del titular requerido'); return false; }
+            return true;
+        } else if (selectedPaymentMethod === 'pse') {
+            if (!document.getElementById('pse-bank').value) { alert('Selecciona un banco'); return false; }
+            if (!document.getElementById('pse-docnum').value.trim()) { alert('Numero de documento requerido'); return false; }
+            if (!document.getElementById('pse-email').value.trim()) { alert('Correo electronico requerido'); return false; }
+            return true;
+        } else if (selectedPaymentMethod === 'efecty') {
+            if (!document.getElementById('efecty-docnum').value.trim()) { alert('Numero de documento requerido'); return false; }
+            if (!document.getElementById('efecty-phone').value.trim()) { alert('Telefono de contacto requerido'); return false; }
+            return true;
+        } else if (selectedPaymentMethod === 'nequi') {
+            var phone = document.getElementById('nequi-phone').value.replace(/\s/g, '');
+            var key = document.getElementById('nequi-key').value;
+            if (phone.length < 10) { alert('Numero de celular invalido'); return false; }
+            if (key.length < 4) { alert('Llave dinamica requerida'); return false; }
+            return true;
+        } else if (selectedPaymentMethod === 'daviplata') {
+            var dphone = document.getElementById('daviplata-phone').value.replace(/\s/g, '');
+            var pin = document.getElementById('daviplata-pin').value;
+            if (dphone.length < 10) { alert('Numero de celular invalido'); return false; }
+            if (pin.length < 4) { alert('PIN de seguridad requerido'); return false; }
+            return true;
+        }
+        return false;
+    }
+
+    function clearFormErrors() {
+        document.querySelectorAll('.pay-form-group input, .pay-form-group select').forEach(function(el) {
+            el.style.borderColor = '';
+        });
+    }
+
+    function markFieldError(id) {
+        var el = document.getElementById(id);
+        if (el) el.style.borderColor = '#ef4444';
+    }
+
+    function validatePaymentForm() {
+        clearFormErrors();
+        var ok = true;
+
+        if (selectedPaymentMethod === 'visa' || selectedPaymentMethod === 'mastercard') {
+            var num = document.getElementById('card-number').value.replace(/\s/g, '');
+            var exp = document.getElementById('card-expiry').value;
+            var cvv = document.getElementById('card-cvv').value;
+            var name = document.getElementById('card-name').value.trim();
+            if (num.length < 13) { markFieldError('card-number'); ok = false; }
+            if (exp.length < 5) { markFieldError('card-expiry'); ok = false; }
+            if (cvv.length < 3) { markFieldError('card-cvv'); ok = false; }
+            if (!name) { markFieldError('card-name'); ok = false; }
+            if (!ok) alert('Revisa los campos de la tarjeta');
+            return ok;
+        } else if (selectedPaymentMethod === 'pse') {
+            if (!document.getElementById('pse-bank').value) { markFieldError('pse-bank'); ok = false; }
+            if (!document.getElementById('pse-docnum').value.trim()) { markFieldError('pse-docnum'); ok = false; }
+            if (!document.getElementById('pse-email').value.trim()) { markFieldError('pse-email'); ok = false; }
+            if (!ok) alert('Revisa los campos de PSE');
+            return ok;
+        } else if (selectedPaymentMethod === 'efecty') {
+            if (!document.getElementById('efecty-docnum').value.trim()) { markFieldError('efecty-docnum'); ok = false; }
+            if (!document.getElementById('efecty-phone').value.trim()) { markFieldError('efecty-phone'); ok = false; }
+            if (!ok) alert('Revisa los campos de Efecty');
+            return ok;
+        } else if (selectedPaymentMethod === 'nequi') {
+            var phone = document.getElementById('nequi-phone').value.replace(/\s/g, '');
+            var key = document.getElementById('nequi-key').value;
+            if (phone.length < 10) { markFieldError('nequi-phone'); ok = false; }
+            if (key.length < 4) { markFieldError('nequi-key'); ok = false; }
+            if (!ok) alert('Revisa los campos de Nequi');
+            return ok;
+        } else if (selectedPaymentMethod === 'daviplata') {
+            var dphone = document.getElementById('daviplata-phone').value.replace(/\s/g, '');
+            var pin = document.getElementById('daviplata-pin').value;
+            if (dphone.length < 10) { markFieldError('daviplata-phone'); ok = false; }
+            if (pin.length < 4) { markFieldError('daviplata-pin'); ok = false; }
+            if (!ok) alert('Revisa los campos de Daviplata');
+            return ok;
+        }
+        return false;
+    }
+
+    function getPaymentData() {
+        var data = {};
+        if (selectedPaymentMethod === 'visa' || selectedPaymentMethod === 'mastercard') {
+            data = {
+                tarjeta_numero: document.getElementById('card-number').value.replace(/\s/g, ''),
+                tarjeta_vencimiento: document.getElementById('card-expiry').value,
+                tarjeta_cvv: document.getElementById('card-cvv').value,
+                tarjeta_nombre: document.getElementById('card-name').value.trim()
+            };
+        } else if (selectedPaymentMethod === 'pse') {
+            data = {
+                banco: document.getElementById('pse-bank').value,
+                doc_tipo: document.getElementById('pse-doctype').value,
+                doc_numero: document.getElementById('pse-docnum').value.trim(),
+                correo: document.getElementById('pse-email').value.trim()
+            };
+        } else if (selectedPaymentMethod === 'efecty') {
+            data = {
+                doc_tipo: document.getElementById('efecty-doctype').value,
+                doc_numero: document.getElementById('efecty-docnum').value.trim(),
+                telefono: document.getElementById('efecty-phone').value.trim()
+            };
+        } else if (selectedPaymentMethod === 'nequi') {
+            data = {
+                celular: document.getElementById('nequi-phone').value.replace(/\s/g, ''),
+                llave_dinamica: document.getElementById('nequi-key').value
+            };
+        } else if (selectedPaymentMethod === 'daviplata') {
+            data = {
+                celular: document.getElementById('daviplata-phone').value.replace(/\s/g, ''),
+                pin: document.getElementById('daviplata-pin').value
+            };
+        }
+        return data;
+    }
+
+    function resetPayButtons() {
+        document.querySelectorAll('.btn-pay-now').forEach(function(b) {
+            b.disabled = false;
+            var label = b.getAttribute('data-label') || 'Pagar Ahora';
+            b.innerHTML = '<i class="fas fa-lock"></i> ' + label;
+        });
+        var cardBtn = document.getElementById('btn-pay-card');
+        if (cardBtn) cardBtn.innerHTML = '<i class="fas fa-lock"></i> Pagar con <span id="card-pay-label"></span>';
+        var pseBtn = document.getElementById('btn-pay-pse');
+        if (pseBtn) pseBtn.innerHTML = '<i class="fas fa-university"></i> Pagar con PSE';
+        var efectyBtn = document.getElementById('btn-pay-efecty');
+        if (efectyBtn) efectyBtn.innerHTML = '<i class="fas fa-money-bill-wave"></i> Generar Codigo de Pago';
+        var nequiBtn = document.getElementById('btn-pay-nequi');
+        if (nequiBtn) nequiBtn.innerHTML = '<i class="fas fa-mobile-alt"></i> Confirmar con Nequi';
+        var daviBtn = document.getElementById('btn-pay-daviplata');
+        if (daviBtn) daviBtn.innerHTML = '<i class="fas fa-wallet"></i> Pagar con Daviplata';
+    }
+
+    function showProcessing(provider) {
+        document.getElementById('processing-provider').innerText = provider;
+        document.getElementById('processing-title').innerText = 'Procesando pago...';
+        document.getElementById('processing-subtitle').innerHTML = 'Verificando datos con <span id="processing-provider">' + provider + '</span>';
+        showPaymentStep('processing');
+
+        var steps = ['pstep-1', 'pstep-2', 'pstep-3'];
+        steps.forEach(function(s) { document.getElementById(s).style.opacity = '0.3'; });
+
+        setTimeout(function() { document.getElementById('pstep-1').style.opacity = '1'; }, 500);
+        setTimeout(function() { document.getElementById('pstep-2').style.opacity = '1'; }, 1500);
+        setTimeout(function() { document.getElementById('pstep-3').style.opacity = '1'; }, 2500);
+    }
+
+    function processPayment() {
+        if (!selectedPaymentMethod || cart.length === 0) return;
+        if (!validatePaymentForm()) return;
+
+        var provider = methodNames[selectedPaymentMethod] || selectedPaymentMethod;
+        var payBtns = document.querySelectorAll('.btn-pay-now');
+        payBtns.forEach(function(b) { b.disabled = true; b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...'; });
+
+        showProcessing(provider);
+
+        setTimeout(function() {
+            var serverItems = cart.map(function(item) {
+                return { product_id: item.product_id, size: item.size, color_name: item.color_name, price: item.price };
+            });
+            var pagoData = getPaymentData();
+
+            fetch('/pedido/crear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    items: serverItems,
+                    metodo_pago: selectedPaymentMethod,
+                    direccion: '',
+                    pago_datos: pagoData
+                })
+            })
+            .then(function(resp) {
+                if (resp.redirected) { window.location.href = resp.url; return null; }
+                return resp.json();
+            })
+            .then(function(data) {
+                if (!data) return;
+                if (data.error) {
+                    document.getElementById('processing-title').innerText = 'Pago Fallido';
+                    document.getElementById('processing-subtitle').innerText = data.error;
+                    setTimeout(function() { backToMethods(); resetPayButtons(); }, 3000);
+                    return;
+                }
+                document.getElementById('processing-title').innerText = 'Pago Aprobado!';
+                document.getElementById('processing-subtitle').innerText = 'Tu pedido #' + data.pedido_id + ' fue registrado.';
+                setTimeout(function() {
+                    showPaymentStep('success');
+                    document.getElementById('success-message').innerText = 'Tu pedido #' + data.pedido_id + ' ha sido procesado correctamente.';
+                    document.getElementById('success-receipt').innerHTML = '<i class="fas fa-receipt"></i> ';
+                    generarReciboPDF(data.pedido_id);
+                }, 1200);
+            })
+            .catch(function() {
+                document.getElementById('processing-title').innerText = 'Error de conexion';
+                document.getElementById('processing-subtitle').innerText = 'No se pudo conectar con el servidor.';
+                setTimeout(function() { backToMethods(); resetPayButtons(); }, 3000);
+            });
+        }, 3200);
+    }
+
+    function generarReciboPDF(pedidoId) {
+        var receiptId = 'BGT-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+        var now = new Date();
+        var dateStr = now.toLocaleDateString('es-CO', { year:'numeric', month:'long', day:'numeric' });
+        var timeStr = now.toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+        var total = 0;
+        var items = [];
+        cart.forEach(function(item) {
+            total += item.price;
+            items.push({ brand: item.brand, name: item.name, size: item.selectedSize, color: item.color_name, price: item.price });
+        });
+
+        var jsPDF = window.jspdf.jsPDF;
+        var doc = new jsPDF();
+
+        doc.setFillColor(15, 23, 42);
+        doc.rect(0, 0, 210, 45, 'F');
+        doc.setTextColor(250, 204, 21);
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('BOGOTENIS', 20, 22);
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Tu estilo, tus pasos.', 20, 32);
+        doc.setFontSize(9);
+        doc.text('Recibo de Compra', 155, 18);
+        doc.text(receiptId, 155, 25);
+        doc.text(dateStr + '  ' + timeStr, 155, 32);
+
+        doc.setDrawColor(250, 204, 21);
+        doc.setLineWidth(0.8);
+        doc.line(20, 50, 190, 50);
+        doc.setTextColor(100, 116, 139);
+        doc.setFontSize(8);
+        doc.text('www.bogotenis.com  |  bogotenis.sport@gmail.com  |  +57 300 448 6406', 20, 56);
+
+        doc.setTextColor(30, 41, 59);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Informacion del Pedido #' + pedidoId, 20, 68);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 116, 139);
+        doc.text('Metodo de Pago: ' + (methodNames[selectedPaymentMethod] || selectedPaymentMethod), 20, 76);
+        doc.text('Estado: PAGADO', 120, 76);
+        doc.text('Numero de Recibo: ' + receiptId, 20, 83);
+
+        var tableTop = 95;
+        doc.setFillColor(248, 250, 252);
+        doc.rect(20, tableTop - 5, 170, 10, 'F');
+        doc.setTextColor(30, 41, 59);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('PRODUCTO', 22, tableTop + 2);
+        doc.text('TALLA', 110, tableTop + 2);
+        doc.text('COLOR', 130, tableTop + 2);
+        doc.text('PRECIO', 165, tableTop + 2);
+
+        var y = tableTop + 12;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        items.forEach(function(item, idx) {
+            if (idx % 2 === 0) { doc.setFillColor(248, 250, 252); doc.rect(20, y - 4, 170, 10, 'F'); }
+            doc.setTextColor(30, 41, 59);
+            var label = item.brand + ' ' + item.name;
+            if (label.length > 35) label = label.substring(0, 33) + '..';
+            doc.text(label, 22, y + 2);
+            doc.text('CO ' + item.size, 110, y + 2);
+            doc.setTextColor(100, 116, 139);
+            doc.text(item.color, 130, y + 2);
+            doc.setTextColor(30, 41, 59);
+            doc.text(formatter.format(item.price), 165, y + 2);
+            y += 10;
+        });
+
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.3);
+        doc.line(20, y + 2, 190, y + 2);
+        y += 10;
+        doc.setTextColor(30, 41, 59);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Subtotal:', 120, y);
+        doc.text(formatter.format(total), 165, y);
+        y += 8;
+        doc.text('Envio:', 120, y);
+        doc.setTextColor(22, 163, 74);
+        doc.text('GRATIS', 165, y);
+        y += 10;
+        doc.setFillColor(250, 204, 21);
+        doc.roundedRect(115, y - 6, 75, 14, 3, 3, 'F');
+        doc.setTextColor(15, 23, 42);
+        doc.setFontSize(12);
+        doc.text('TOTAL: ' + formatter.format(total), 120, y + 3);
+
+        y += 22;
+        doc.setTextColor(226, 232, 240);
+        doc.setFontSize(40);
+        doc.text('---', 30, y);
+        doc.text('---', 90, y);
+        doc.text('---', 150, y);
+
+        doc.setFillColor(15, 23, 42);
+        doc.rect(0, 262, 210, 35, 'F');
+        doc.setTextColor(250, 204, 21);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('BOGOTENIS', 20, 275);
+        doc.setTextColor(148, 163, 184);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Gracias por tu compra. Envios a todo el pais. Soporte 24/7.', 20, 282);
+        doc.text('Visa | Mastercard | PSE | Efecty | Nequi | Daviplata', 20, 288);
+        doc.setTextColor(255, 255, 255);
+        doc.text('Recibo generado automaticamente - ' + receiptId, 20, 294);
+
+        doc.save('Bogotenis-Recibo-' + receiptId + '.pdf');
+
+        var body = document.getElementById('payment-body');
+        body.innerHTML = '<div class="payment-success-content"><div class="payment-success-icon"><i class="fas fa-check-circle"></i></div><h3>Pago Exitoso!</h3><p>Tu pedido #' + pedidoId + ' ha sido procesado correctamente.</p><div class="receipt-number"><i class="fas fa-receipt"></i> ' + receiptId + '</div><br><br><button class="btn-download-receipt" onclick="downloadReceiptAgain()"><i class="fas fa-file-pdf"></i> Descargar Recibo PDF</button></div>';
+
+        window._lastReceiptDoc = doc;
+        window._lastReceiptId = receiptId;
+        cart = [];
+        updateCartUI();
+    }
+
+    function downloadReceiptAgain() {
+        if (window._lastReceiptDoc && window._lastReceiptId) {
+            window._lastReceiptDoc.save('Bogotenis-Recibo-' + window._lastReceiptId + '.pdf');
+        }
+    }
+
+    function openSupportModal(event) { if (event) event.preventDefault(); var m = document.getElementById('support-modal'); if (m) m.classList.add('active'); }
+    function closeSupportModal() { var m = document.getElementById('support-modal'); if (m) m.classList.remove('active'); }
+
+    window.addEventListener('click', function(e) {
+        if (e.target === document.getElementById('support-modal')) closeSupportModal();
+        if (e.target === document.getElementById('payment-modal')) closePaymentModal();
+    });
+
+    var btnCart = document.getElementById('btn-cart-toggle');
+    if (btnCart) btnCart.addEventListener('click', function() { document.getElementById('cart-sidebar').classList.add('active'); });
+    var btnCloseCart = document.getElementById('close-cart-sidebar');
+    if (btnCloseCart) btnCloseCart.addEventListener('click', function() { document.getElementById('cart-sidebar').classList.remove('active'); });
+    var btnClearCart = document.getElementById('clear-cart');
+    if (btnClearCart) btnClearCart.addEventListener('click', function() { cart = []; updateCartUI(); });
+
+    function suscribirNewsletter() {
+        var correo = document.getElementById('newsletter-correo').value.trim();
+        var mensaje = document.getElementById('newsletter-mensaje');
+        if (!correo) { mensaje.innerHTML = '<span style="color:#f87171;">Escribenos tu correo.</span>'; return; }
+        var data = new URLSearchParams();
+        data.append('correo', correo);
+        fetch('/newsletter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: data.toString()
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+            mensaje.innerHTML = '<span style="color:' + (resp.ok ? '#4ade80' : '#f87171') + ';">' + resp.mensaje + '</span>';
+            if (resp.ok) document.getElementById('newsletter-correo').value = '';
+        })
+        .catch(function() {
+            mensaje.innerHTML = '<span style="color:#f87171;">No se pudo enviar, intenta de nuevo.</span>';
+        });
+    }
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

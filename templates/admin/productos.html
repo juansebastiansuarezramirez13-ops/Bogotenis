@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block titulo %}Admin Productos{% endblock %}
+
+{% block contenido %}
+<section class="container py-5" style="margin-top:60px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold" style="color:var(--primary);">Productos</h2>
+        <a href="{{ url_for('admin_producto_nuevo') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo Producto</a>
+    </div>
+
+    <div class="admin-search-bar">
+        <input type="text" id="admin-product-search" placeholder="Buscar por marca, nombre o categoria..." oninput="filterAdminProducts()">
+        <span class="search-count" id="admin-count">60 productos</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover" style="background:white;border-radius:12px;overflow:hidden;">
+            <thead style="background:var(--primary);color:white;">
+                <tr>
+                    <th>ID</th>
+                    <th>Marca</th>
+                    <th>Nombre</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Categoria</th>
+                    <th>Oferta</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="admin-products-body">
+                {% for prod in productos %}
+                <tr data-search="{{ prod.marca|lower }} {{ prod.nombre|lower }} {{ prod.categoria_nombre|lower }}">
+                    <td>{{ prod.id }}</td>
+                    <td>{{ prod.marca }}</td>
+                    <td>{{ prod.nombre }}</td>
+                    <td>${{ '{:,.0f}'.format(prod.precio) }}</td>
+                    <td>
+                        {% if prod.stock <= 3 %}
+                            <span class="badge bg-danger">{{ prod.stock }}</span>
+                        {% else %}
+                            <span class="badge bg-success">{{ prod.stock }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ prod.categoria_nombre }}</td>
+                    <td>{% if prod.en_oferta %}<span class="badge bg-warning">20% OFF</span>{% else %}-{% endif %}</td>
+                    <td><span class="badge bg-info">{{ prod.estado }}</span></td>
+                    <td>
+                        <a href="{{ url_for('admin_producto_editar', producto_id=prod.id) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                        <form method="POST" action="{{ url_for('admin_producto_eliminar', producto_id=prod.id) }}" style="display:inline;" onsubmit="return confirm('Eliminar este producto?')">
+                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<script>
+function filterAdminProducts() {
+    var query = document.getElementById('admin-product-search').value.toLowerCase();
+    var rows = document.querySelectorAll('#admin-products-body tr');
+    var visible = 0;
+    rows.forEach(function(row) {
+        var text = row.getAttribute('data-search') || '';
+        if (text.indexOf(query) !== -1) {
+            row.style.display = '';
+            visible++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    document.getElementById('admin-count').innerText = visible + ' producto' + (visible !== 1 ? 's' : '');
+}
+</script>
+{% endblock %}

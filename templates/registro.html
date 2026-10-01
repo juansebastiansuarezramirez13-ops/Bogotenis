@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block titulo %}Crear cuenta{% endblock %}
+
+{% block contenido %}
+<section class="auth-hero">
+    <div class="hero-emoji-carousel">
+        <span class="sliding-emoji">&#128095;</span>
+        <span class="sliding-emoji">&#129406;</span>
+        <span class="sliding-emoji">&#128098;</span>
+        <span class="sliding-emoji">&#128096;</span>
+        <span class="sliding-emoji">&#129407;</span>
+        <span class="sliding-emoji">&#128095;</span>
+        <span class="sliding-emoji">&#129406;</span>
+        <span class="sliding-emoji">&#128098;</span>
+    </div>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h2>BOGO<span>TENIS</span></h2>
+                <p>Crea tu cuenta y obtiene beneficios</p>
+            </div>
+            <form method="POST" action="{{ url_for('registro') }}">
+                <div class="auth-input-group">
+                    <label><i class="fas fa-user"></i> Nombre Completo</label>
+                    <input type="text" name="nombre" placeholder="Tu nombre y apellido" required>
+                </div>
+                <div class="auth-input-group">
+                    <label><i class="fas fa-envelope"></i> Correo Electronico</label>
+                    <input type="email" name="correo" placeholder="ejemplo@correo.com" required>
+                </div>
+                <div class="auth-input-group">
+                    <label><i class="fas fa-lock"></i> Contrasena</label>
+                    <input type="password" name="contrasena" placeholder="Crea una contrasena" required minlength="6">
+                </div>
+                <button type="submit" class="btn-auth-submit">Registrarse</button>
+            </form>
+            <div class="auth-switch">
+                Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesion</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

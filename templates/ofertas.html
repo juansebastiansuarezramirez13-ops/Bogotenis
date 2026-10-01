@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block titulo %}Ofertas{% endblock %}
+
+{% block contenido %}
+<div id="offers-view">
+    <section class="offers-hero">
+        <div class="offers-hero-content">
+            <span class="offers-badge"><i class="fas fa-fire"></i> DESCUENTOS RELAMPAGO</span>
+            <h1>ZONA OUTLET EXCLUSIVA</h1>
+            <p>Ahorra un 20% en referencias seleccionadas por tiempo limitado. Envios gratis incluidos!</p>
+        </div>
+    </section>
+
+    <section class="container py-5">
+        <div class="offers-grid-title text-center mb-5">
+            <h2 class="fw-bold text-dark text-uppercase">Productos en liquidacion (-20%)</h2>
+            <div class="title-line"></div>
+        </div>
+        <div class="products-grid" id="offers-grid"></div>
+        <div class="pagination-container" id="offers-pagination" style="display:none;"></div>
+    </section>
+</div>
+
+<div class="cloud-overlay" id="product-modal">
+    <div class="cloud-modal">
+        <button class="cloud-close" onclick="closeProductModal()">&times;</button>
+        <div class="cloud-body">
+            <div class="product-single-image-container">
+                <div class="shoe-view-box" id="shoe-image-viewer">
+                    <img src="" alt="Zapato" id="modal-main-shoe-image" style="width:100%;height:100%;object-fit:contain;">
+                </div>
+            </div>
+            <div class="product-details-content">
+                <span class="product-modal-brand" id="modal-brand">MARCA</span>
+                <h2 class="product-modal-name" id="modal-name">Nombre del Zapato</h2>
+                <div class="product-modal-price" id="modal-price">$0</div>
+                <hr class="my-3" style="border-color: rgba(255,255,255,0.1);">
+                <div class="option-section mb-4">
+                    <label class="option-label mb-2 d-block">Selecciona Color disponible:</label>
+                    <div class="color-picker-container" id="modal-colors"></div>
+                </div>
+                <div class="option-section mb-4">
+                    <label class="option-label mb-2 d-block">Selecciona Talla Colombiana (CO):</label>
+                    <div class="size-picker-container" id="modal-sizes"></div>
+                </div>
+                <button class="btn-cloud-add" id="modal-add-to-cart-btn">
+                    <i class="fas fa-shopping-cart me-2"></i> Anadir al Carrito
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var products = {{ productos | tojson }};
+var currentSelectedColor = '';
+var currentSelectedSize = '';
+var activeProduct = null;
+var activePriceMode = 'sale';
+var OFFERS_PER_PAGE = 12;
+var offersPage = 1;
+var saleProducts = [];
+
+function renderOffersPage(page) {
+    var grid = document.getElementById('offers-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    var start = (page - 1) * OFFERS_PER_PAGE;
+    var end = start + OFFERS_PER_PAGE;
+    var pageItems = saleProducts.slice(start, end);
+    pageItems.forEach(function(product) {
+        var discountedPrice = product.precio * 0.80;
+        var card = document.createElement('div');
+        card.className = 'product-card offer-card';
+        card.setAttribute('onclick', 'openProductModal(' + product.id + ', "sale")');
+        card.innerHTML = '<div class="product-image relative-box"><span class="discount-pill">20% OFF</span><img src="' + imagenUrl(product.variantes[0].imagen) + '" alt="' + product.nombre + '" style="width:100%;height:100%;object-fit:contain;" onerror="fallbackImagen(this)"></div><div class="product-brand">' + product.marca + '</div><h3 class="product-name">' + product.nombre + '</h3><div class="product-price-row"><div><span class="old-price-label">' + formatter.format(product.precio) + '</span><span class="price-tag sale-price d-block">' + formatter.format(discountedPrice) + '</span></div><button class="btn-add btn-sale-add" onclick="quickAddToCart(' + product.id + ',\'sale\',event)">+</button></div>';
+        grid.appendChild(card);
+    });
+}
+
+function renderOffersPagination() {
+    var container = document.getElementById('offers-pagination');
+    var totalPages = Math.ceil(saleProducts.length / OFFERS_PER_PAGE);
+    if (totalPages <= 1) { container.style.display = 'none'; return; }
+    container.style.display = 'flex';
+    container.innerHTML = '';
+    for (var i = 1; i <= totalPages; i++) {
+        var btn = document.createElement('button');
+        btn.className = 'pagination-btn' + (i === offersPage ? ' active' : '');
+        btn.innerText = i;
+        btn.onclick = (function(p) { return function() { offersPage = p; renderOffersPage(p); renderOffersPagination(); }; })(i);
+        container.appendChild(btn);
+    }
+}
+
+function buscarProducto(productId) { return products.find(function(p) { return p.id === productId; }); }
+
+function quickAddToCart(productId, mode, event) {
+    event.stopPropagation();
+    var product = buscarProducto(productId);
+    if (!product) return;
+    var finalPrice = mode === 'sale' ? product.precio * 0.80 : product.precio;
+    cart.push({ product_id: product.id, brand: product.marca, name: product.nombre + (mode === 'sale' ? ' (% Oferta)' : ''), price: finalPrice, selectedColor: product.variantes[0].color_code, color_name: product.variantes[0].color_nombre, selectedSize: product.tallas[0], size: product.tallas[0] });
+    updateCartUI();
+    document.getElementById('btn-cart-toggle').click();
+}
+
+function openProductModal(productId, mode) {
+    var product = buscarProducto(productId);
+    if (!product) return;
+    activeProduct = product;
+    activePriceMode = mode;
+    document.getElementById('modal-brand').innerText = product.marca;
+    document.getElementById('modal-name').innerText = product.nombre + (mode === 'sale' ? ' (% Oferta)' : '');
+    var finalPrice = mode === 'sale' ? product.precio * 0.80 : product.precio;
+    document.getElementById('modal-price').innerText = formatter.format(finalPrice);
+    currentSelectedSize = product.tallas[0];
+    currentSelectedColor = product.variantes[0].color_code;
+    var cc = document.getElementById('modal-colors');
+    cc.innerHTML = '';
+    product.variantes.forEach(function(v, idx) {
+        cc.innerHTML += '<div class="color-option ' + (idx === 0 ? 'selected' : '') + '" style="background-color:' + v.color_code + '" title="' + v.color_nombre + '" onclick="changeProductColor(this,\'' + imagenUrl(v.imagen) + '\',\'' + v.color_code + '\',\'' + v.color_nombre + '\')"></div>';
+    });
+    var imgEl = document.getElementById('modal-main-shoe-image');
+    if (imgEl) { imgEl.onerror = function() { fallbackImagen(this); }; imgEl.src = imagenUrl(product.variantes[0].imagen); }
+    var sc = document.getElementById('modal-sizes');
+    sc.innerHTML = '';
+    product.tallas.forEach(function(t, idx) {
+        sc.innerHTML += '<button class="size-option ' + (idx === 0 ? 'selected' : '') + '" onclick="selectSizeOption(this,\'' + t + '\')">CO ' + t + '</button>';
+    });
+    var currentColorName = product.variantes[0].color_nombre;
+    document.getElementById('modal-add-to-cart-btn').onclick = function() {
+        var ip = activePriceMode === 'sale' ? activeProduct.precio * 0.80 : activeProduct.precio;
+        cart.push({ product_id: activeProduct.id, brand: activeProduct.marca, name: activeProduct.nombre + (activePriceMode === 'sale' ? ' (% Oferta)' : ''), price: ip, selectedColor: currentSelectedColor, color_name: currentColorName, selectedSize: currentSelectedSize, size: currentSelectedSize });
+        updateCartUI(); closeProductModal(); document.getElementById('btn-cart-toggle').click();
+    };
+    document.getElementById('product-modal').classList.add('active');
+}
+
+function changeProductColor(element, imagePath, colorCode, colorName) {
+    document.querySelectorAll('.color-option').forEach(function(el) { el.classList.remove('selected'); });
+    element.classList.add('selected');
+    currentSelectedColor = colorCode;
+    var imgEl = document.getElementById('modal-main-shoe-image');
+    if (imgEl) { imgEl.onerror = function() { fallbackImagen(this); }; imgEl.src = imagePath; }
+}
+
+function selectSizeOption(element, size) {
+    document.querySelectorAll('.size-option').forEach(function(el) { el.classList.remove('selected'); });
+    element.classList.add('selected');
+    currentSelectedSize = size;
+}
+
+function closeProductModal() { document.getElementById('product-modal').classList.remove('active'); }
+
+window.onload = function() { saleProducts = products.filter(function(p) { return p.en_oferta == 1; }); offersPage = 1; renderOffersPage(1); renderOffersPagination(); };
+</script>
+{% endblock %}

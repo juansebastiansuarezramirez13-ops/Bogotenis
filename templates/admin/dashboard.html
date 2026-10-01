@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block titulo %}Admin Dashboard{% endblock %}
+
+{% block contenido %}
+<section class="container py-5" style="margin-top:60px;">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold" style="color:var(--primary);">Panel Administrativo</h2>
+            <hr style="border-color:var(--accent);">
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card text-center p-4" style="background:var(--primary);color:white;border-radius:12px;">
+                <i class="fas fa-box fa-2x mb-2" style="color:var(--accent);"></i>
+                <h3>{{ total_productos }}</h3>
+                <p class="mb-0">Productos</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center p-4" style="background:var(--primary);color:white;border-radius:12px;">
+                <i class="fas fa-users fa-2x mb-2" style="color:var(--accent);"></i>
+                <h3>{{ total_clientes }}</h3>
+                <p class="mb-0">Clientes</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center p-4" style="background:var(--primary);color:white;border-radius:12px;">
+                <i class="fas fa-shopping-bag fa-2x mb-2" style="color:var(--accent);"></i>
+                <h3>{{ total_pedidos }}</h3>
+                <p class="mb-0">Pedidos</p>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-center p-4" style="background:var(--primary);color:white;border-radius:12px;">
+                <i class="fas fa-dollar-sign fa-2x mb-2" style="color:var(--accent);"></i>
+                <h3>${{ '{:,.0f}'.format(ventas) }}</h3>
+                <p class="mb-0">Ventas Totales</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mb-4">
+            <div class="card" style="border-radius:12px;">
+                <div class="card-header" style="background:var(--primary);color:white;">
+                    <h5 class="mb-0"><i class="fas fa-link"></i> Accesos Rapidos</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('admin_productos') }}" class="btn btn-warning me-2 mb-2"><i class="fas fa-box"></i> Ver Productos</a>
+                    <a href="{{ url_for('admin_producto_nuevo') }}" class="btn btn-success me-2 mb-2"><i class="fas fa-plus"></i> Nuevo Producto</a>
+                    <a href="{{ url_for('admin_pedidos') }}" class="btn btn-info me-2 mb-2"><i class="fas fa-shopping-bag"></i> Ver Pedidos</a>
+                    <a href="{{ url_for('admin_usuarios') }}" class="btn btn-secondary me-2 mb-2"><i class="fas fa-users"></i> Ver Usuarios</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card" style="border-radius:12px;">
+                <div class="card-header" style="background:#dc3545;color:white;">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Stock Bajo</h5>
+                </div>
+                <div class="card-body">
+                    {% if bajo_inventario %}
+                        {% for prod in bajo_inventario %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>{{ prod.nombre }}</span>
+                                <span class="badge bg-danger">{{ prod.stock }} uds</span>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">Todo con buen stock.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block titulo %}Catalogo{% endblock %}
+
+{% block contenido %}
+<div id="main-catalog-view">
+    <section class="hero" id="inicio">
+        <div class="hero-emoji-carousel">
+            <span class="sliding-emoji">&#128095;</span>
+            <span class="sliding-emoji">&#129406;</span>
+            <span class="sliding-emoji">&#128098;</span>
+            <span class="sliding-emoji">&#128096;</span>
+            <span class="sliding-emoji">&#129407;</span>
+            <span class="sliding-emoji">&#128095;</span>
+            <span class="sliding-emoji">&#129406;</span>
+            <span class="sliding-emoji">&#128098;</span>
+        </div>
+        <div class="hero-content">
+            <span class="hero-badge">Coleccion - Bogotenis - 2026</span>
+            <h1>PISA FUERTE, DESTACA SIEMPRE</h1>
+            <p>La coleccion de calzado digital mas grande con envios rapidos a todo el pais.</p>
+        </div>
+    </section>
+
+    <section class="features-bar">
+        <div class="features-container">
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                <div class="feature-text">
+                    <h4>Garantia Total</h4>
+                    <p>2 anos de garantia en todos nuestros productos</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-truck"></i></div>
+                <div class="feature-text">
+                    <h4>Envio Gratis</h4>
+                    <p>En compras superiores a $100.000</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-undo"></i></div>
+                <div class="feature-text">
+                    <h4>Devolucion Facil</h4>
+                    <p>30 dias para devolver tu compra de forma agil</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-headset"></i></div>
+                <div class="feature-text">
+                    <h4>Soporte 24/7</h4>
+                    <p>Estamos aqui para ayudarte a cualquier hora</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="marcas-section">
+        <div class="container text-center">
+            <div class="brands-filter-container">
+                <button class="brand-filter-btn active" data-cat="all">TODO</button>
+                {% for cat in categorias %}
+                    <button class="brand-filter-btn" data-cat="{{ cat.id }}">{{ cat.nombre|upper }}</button>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="container py-5">
+        <div class="products-grid" id="main-grid"></div>
+        <div class="pagination-container" id="pagination" style="display:none;"></div>
+    </section>
+</div>
+
+<div class="cloud-overlay" id="product-modal">
+    <div class="cloud-modal">
+        <button class="cloud-close" onclick="closeProductModal()">&times;</button>
+        <div class="cloud-body">
+            <div class="product-single-image-container">
+                <div class="shoe-view-box" id="shoe-image-viewer">
+                    <img src="" alt="Zapato" id="modal-main-shoe-image" style="width:100%;height:100%;object-fit:contain;">
+                </div>
+            </div>
+            <div class="product-details-content">
+                <span class="product-modal-brand" id="modal-brand">MARCA</span>
+                <h2 class="product-modal-name" id="modal-name">Nombre del Zapato</h2>
+                <div class="product-modal-price" id="modal-price">$0</div>
+                <hr class="my-3" style="border-color: rgba(255,255,255,0.1);">
+                <div class="option-section mb-4">
+                    <label class="option-label mb-2 d-block">Selecciona Color disponible:</label>
+                    <div class="color-picker-container" id="modal-colors"></div>
+                </div>
+                <div class="option-section mb-4">
+                    <label class="option-label mb-2 d-block">Selecciona Talla Colombiana (CO):</label>
+                    <div class="size-picker-container" id="modal-sizes"></div>
+                </div>
+                <button class="btn-cloud-add" id="modal-add-to-cart-btn">
+                    <i class="fas fa-shopping-cart me-2"></i> Anadir al Carrito
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var products = {{ productos | tojson }};
+var currentSelectedColor = '';
+var currentSelectedSize = '';
+var activeProduct = null;
+var activePriceMode = 'regular';
+var ITEMS_PER_PAGE = 12;
+var currentPage = 1;
+var filteredProducts = [];
+
+function renderGrid(page) {
+    var grid = document.getElementById('main-grid');
+    grid.innerHTML = '';
+    var start = (page - 1) * ITEMS_PER_PAGE;
+    var end = start + ITEMS_PER_PAGE;
+    var pageItems = filteredProducts.slice(start, end);
+    if (pageItems.length === 0) { grid.innerHTML = '<p class="text-center text-muted">No hay productos en esta categoria.</p>'; return; }
+    pageItems.forEach(function(product) {
+        var defaultImage = imagenUrl(product.variantes[0].imagen);
+        var card = document.createElement('div');
+        card.className = 'product-card';
+        card.setAttribute('onclick', 'openProductModal(' + product.id + ', "regular")');
+        card.innerHTML = '<div class="product-image"><img src="' + defaultImage + '" alt="' + product.nombre + '" style="width:100%;height:100%;object-fit:contain;" onerror="fallbackImagen(this)"></div><div class="product-brand">' + product.marca + '</div><h3 class="product-name">' + product.nombre + '</h3><div class="product-price-row"><span class="price-tag">' + formatter.format(product.precio) + '</span><button class="btn-add" onclick="quickAddToCart(' + product.id + ', \'regular\', event)">+</button></div>';
+        grid.appendChild(card);
+    });
+}
+
+function renderPagination() {
+    var container = document.getElementById('pagination');
+    var totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+    if (totalPages <= 1) { container.style.display = 'none'; return; }
+    container.style.display = 'flex';
+    container.innerHTML = '';
+    for (var i = 1; i <= totalPages; i++) {
+        var btn = document.createElement('button');
+        btn.className = 'pagination-btn' + (i === currentPage ? ' active' : '');
+        btn.innerText = i;
+        btn.onclick = (function(page) { return function() { currentPage = page; renderGrid(page); renderPagination(); }; })(i);
+        container.appendChild(btn);
+    }
+}
+
+function filterShoes(categoryId, button) {
+    document.querySelectorAll('.brand-filter-btn').forEach(function(btn) { btn.classList.remove('active'); });
+    if (button) button.classList.add('active');
+    currentPage = 1;
+    filteredProducts = categoryId === 'all' ? products : products.filter(function(p) { return p.categoria_id === Number(categoryId); });
+    renderGrid(1);
+    renderPagination();
+}
+
+document.querySelectorAll('.brand-filter-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { filterShoes(btn.dataset.cat, btn); });
+});
+
+function buscarProducto(productId) { return products.find(function(p) { return p.id === productId; }); }
+
+function quickAddToCart(productId, mode, event) {
+    event.stopPropagation();
+    var product = buscarProducto(productId);
+    if (!product) return;
+    var finalPrice = mode === 'sale' ? product.precio * 0.80 : product.precio;
+    cart.push({ product_id: product.id, brand: product.marca, name: product.nombre + (mode === 'sale' ? ' (% Oferta)' : ''), price: finalPrice, selectedColor: product.variantes[0].color_code, color_name: product.variantes[0].color_nombre, selectedSize: product.tallas[0], size: product.tallas[0] });
+    updateCartUI();
+    document.getElementById('btn-cart-toggle').click();
+}
+
+function openProductModal(productId, mode) {
+    var product = buscarProducto(productId);
+    if (!product) return;
+    activeProduct = product;
+    activePriceMode = mode;
+    document.getElementById('modal-brand').innerText = product.marca;
+    document.getElementById('modal-name').innerText = product.nombre + (mode === 'sale' ? ' (% Oferta)' : '');
+    var finalPrice = mode === 'sale' ? product.precio * 0.80 : product.precio;
+    document.getElementById('modal-price').innerText = formatter.format(finalPrice);
+    currentSelectedSize = product.tallas[0];
+    currentSelectedColor = product.variantes[0].color_code;
+    var cc = document.getElementById('modal-colors');
+    cc.innerHTML = '';
+    product.variantes.forEach(function(v, idx) {
+        cc.innerHTML += '<div class="color-option ' + (idx === 0 ? 'selected' : '') + '" style="background-color:' + v.color_code + '" title="' + v.color_nombre + '" onclick="changeProductColor(this,\'' + imagenUrl(v.imagen) + '\',\'' + v.color_code + '\',\'' + v.color_nombre + '\')"></div>';
+    });
+    var imgEl = document.getElementById('modal-main-shoe-image');
+    if (imgEl) { imgEl.onerror = function() { fallbackImagen(this); }; imgEl.src = imagenUrl(product.variantes[0].imagen); }
+    var sc = document.getElementById('modal-sizes');
+    sc.innerHTML = '';
+    product.tallas.forEach(function(t, idx) {
+        sc.innerHTML += '<button class="size-option ' + (idx === 0 ? 'selected' : '') + '" onclick="selectSizeOption(this,\'' + t + '\')">CO ' + t + '</button>';
+    });
+    var currentColorName = product.variantes[0].color_nombre;
+    document.getElementById('modal-add-to-cart-btn').onclick = function() {
+        var ip = activePriceMode === 'sale' ? activeProduct.precio * 0.80 : activeProduct.precio;
+        cart.push({ product_id: activeProduct.id, brand: activeProduct.marca, name: activeProduct.nombre + (activePriceMode === 'sale' ? ' (% Oferta)' : ''), price: ip, selectedColor: currentSelectedColor, color_name: currentColorName, selectedSize: currentSelectedSize, size: currentSelectedSize });
+        updateCartUI(); closeProductModal(); document.getElementById('btn-cart-toggle').click();
+    };
+    document.getElementById('product-modal').classList.add('active');
+}
+
+function changeProductColor(element, imagePath, colorCode, colorName) {
+    document.querySelectorAll('.color-option').forEach(function(el) { el.classList.remove('selected'); });
+    element.classList.add('selected');
+    currentSelectedColor = colorCode;
+    var imgEl = document.getElementById('modal-main-shoe-image');
+    if (imgEl) { imgEl.onerror = function() { fallbackImagen(this); }; imgEl.src = imagePath; }
+}
+
+function selectSizeOption(element, size) {
+    document.querySelectorAll('.size-option').forEach(function(el) { el.classList.remove('selected'); });
+    element.classList.add('selected');
+    currentSelectedSize = size;
+}
+
+function closeProductModal() { document.getElementById('product-modal').classList.remove('active'); }
+
+window.onload = function() { filterShoes('all'); };
+</script>
+{% endblock %}

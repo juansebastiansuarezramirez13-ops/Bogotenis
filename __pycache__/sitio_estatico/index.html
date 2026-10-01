@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>BOGOTENIS | Tienda Oficial</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../static/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
+                <a href="index.html" style="text-decoration:none;">
+                    <h1 style="color: var(--accent); margin:0; font-size: 24px; cursor: pointer;">
+                        BOGO<span style="color:white">TENIS</span>
+                    </h1>
+                </a>
+            </div>
+            <nav class="main-nav">
+                <a href="index.html">Inicio</a>
+                <a href="index.html#marcas-section">Categorias</a>
+                <a href="ofertas.html" class="nav-offers-link">Ofertas %</a>
+                <a href="login.html"><i class="fas fa-user"></i> Mi Cuenta</a>
+                <a href="#" id="nav-support-link" onclick="openSupportModal(event)"><i class="fas fa-headset"></i> Soporte</a>
+            </nav>
+            <div class="header-actions">
+                <button class="icon-btn cart-btn" id="btn-cart-toggle">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count" id="cart-count">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div id="cart-sidebar" class="cart-sidebar">
+        <div class="cart-header-side">
+            <h3>Tu Carrito</h3>
+            <button id="close-cart-sidebar" class="close-btn">&times;</button>
+        </div>
+        <div id="cart-items-container" class="cart-items-list"></div>
+        <div class="cart-footer-side">
+            <div class="cart-total-row">
+                <span>Total:</span>
+                <span id="cart-total-price">$0</span>
+            </div>
+            <button class="order-btn mb-2" id="order-btn" onclick="finalizarPedido()">
+                <span class="order-btn__text"><i class="fas fa-shopping-cart"></i> Finalizar Pedido</span>
+                <span class="order-btn__truck">
+                    <span class="order-btn__headlights"><span class="order-btn__headlight"></span><span class="order-btn__headlight"></span></span>
+                    &#128666;
+                </span>
+                <span class="order-btn__road"></span>
+                <span class="order-btn__spinner"></span>
+                <span class="order-btn__check" style="display:none;"><i class="fas fa-check-circle"></i> Pedido Enviado</span>
+            </button>
+            <button class="btn btn-outline-secondary w-100 btn-sm" id="clear-cart">Vaciar Carrito</button>
+        </div>
+    </div>
+
+    <div id="main-catalog-view">
+        <section class="hero" id="inicio">
+            <div class="hero-emoji-carousel">
+                <span class="sliding-emoji">&#128095;</span>
+                <span class="sliding-emoji">&#129406;</span>
+                <span class="sliding-emoji">&#128098;</span>
+                <span class="sliding-emoji">&#128096;</span>
+                <span class="sliding-emoji">&#129407;</span>
+                <span class="sliding-emoji">&#128095;</span>
+                <span class="sliding-emoji">&#129406;</span>
+                <span class="sliding-emoji">&#128098;</span>
+            </div>
+            <div class="hero-content">
+                <span class="hero-badge">Coleccion - Bogotenis - 2026</span>
+                <h1>PISA FUERTE, DESTACA SIEMPRE</h1>
+                <p>La coleccion de calzado digital mas grande con envios rapidos a todo el pais.</p>
+            </div>
+        </section>
+
+        <section class="features-bar">
+            <div class="features-container">
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div class="feature-text">
+                        <h4>Garantia Total</h4>
+                        <p>2 anos de garantia en todos nuestros productos</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-truck"></i></div>
+                    <div class="feature-text">
+                        <h4>Envio Gratis</h4>
+                        <p>En compras superiores a $100.000</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-undo"></i></div>
+                    <div class="feature-text">
+                        <h4>Devolucion Facil</h4>
+                        <p>30 dias para devolver tu compra de forma agil</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon"><i class="fas fa-headset"></i></div>
+                    <div class="feature-text">
+                        <h4>Soporte 24/7</h4>
+                        <p>Estamos aqui para ayudarte a cualquier hora</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="marcas-section">
+            <div class="container text-center">
+                <div class="brands-filter-container">
+                    <button class="brand-filter-btn active" data-cat="all">TODO</button>
+                    <button class="brand-filter-btn" data-cat="1">DEPORTIVOS</button>
+                    <button class="brand-filter-btn" data-cat="2">CASUAL</button>
+                    <button class="brand-filter-btn" data-cat="3">RUNNING</button>
+                    <button class="brand-filter-btn" data-cat="4">FORMAL</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="container py-5">
+            <div class="products-grid" id="main-grid"></div>
+        </section>
+    </div>
+
+    <div class="cloud-overlay" id="product-modal">
+        <div class="cloud-modal">
+            <button class="cloud-close" onclick="closeProductModal()">&times;</button>
+            <div class="cloud-body">
+                <div class="product-single-image-container">
+                    <div class="shoe-view-box" id="shoe-image-viewer"></div>
+                </div>
+                <div class="product-details-content">
+                    <span class="product-modal-brand" id="modal-brand">MARCA</span>
+                    <h2 class="product-modal-name" id="modal-name">Nombre del Zapato</h2>
+                    <div class="product-modal-price" id="modal-price">$0</div>
+                    <hr class="my-3" style="border-color: rgba(255,255,255,0.1);">
+                    <div class="option-section mb-4">
+                        <label class="option-label mb-2 d-block">Selecciona Color disponible:</label>
+                        <div class="color-picker-container" id="modal-colors"></div>
+                    </div>
+                    <div class="option-section mb-4">
+                        <label class="option-label mb-2 d-block">Selecciona Talla Colombiana (CO):</label>
+                        <div class="size-picker-container" id="modal-sizes"></div>
+                    </div>
+                    <button class="btn-cloud-add" id="modal-add-to-cart-btn">
+                        <i class="fas fa-shopping-cart me-2"></i> Anadir al Carrito
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="support-overlay" id="support-modal">
+        <div class="support-modal-card">
+            <button class="support-close" onclick="closeSupportModal()">&times;</button>
+            <div class="support-header">
+                <div class="support-icon-title"><i class="fas fa-headset"></i></div>
+                <h3>Centro de Soporte</h3>
+                <p>Tienes dudas o inconvenientes? Elige como comunicarte con nosotros:</p>
+            </div>
+            <div class="support-options-list">
+                <a href="https://wa.me/573004486406" target="_blank" class="support-item-link">
+                    <div class="support-item-icon whatsapp-color"><i class="fab fa-whatsapp"></i></div>
+                    <div class="support-item-info">
+                        <h4>Linea Telefonica / WhatsApp</h4>
+                        <p>+57 300 448 6406</p>
+                    </div>
+                    <i class="fas fa-chevron-right support-arrow"></i>
+                </a>
+                <a href="mailto:bogotenis.sport@gmail.com" class="support-item-link">
+                    <div class="support-item-icon email-color"><i class="fas fa-envelope"></i></div>
+                    <div class="support-item-info">
+                        <h4>Correo Electronico</h4>
+                        <p>bogotenis.sport@gmail.com</p>
+                    </div>
+                    <i class="fas fa-chevron-right support-arrow"></i>
+                </a>
+            </div>
+            <div class="support-footer-text">
+                <p><i class="fas fa-clock"></i> Envios y soporte digital 24/7 a todo el pais.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="payment-overlay" id="payment-modal">
+        <div class="payment-modal">
+            <div class="payment-modal-header">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <span class="payment-header-icon"><i class="fas fa-credit-card"></i></span>
+                    <h3>Método de Pago</h3>
+                </div>
+                <button class="payment-close-btn" onclick="closePaymentModal()">&times;</button>
+            </div>
+            <div class="payment-modal-body" id="payment-body">
+                <div class="payment-total-bar">
+                    <span>Total a pagar:</span>
+                    <span id="payment-total-display">$0</span>
+                </div>
+                <div class="payment-methods-label">Selecciona tu método de pago</div>
+                <div class="payment-methods-grid" id="payment-methods">
+                    <div class="payment-method-card" data-method="visa" onclick="selectPaymentMethod(this)">
+                        <span class="pm-icon"><i class="fab fa-cc-visa" style="color:#1a1f71;"></i></span>
+                        <span class="pm-name">Visa</span>
+                    </div>
+                    <div class="payment-method-card" data-method="mastercard" onclick="selectPaymentMethod(this)">
+                        <span class="pm-icon"><i class="fab fa-cc-mastercard" style="color:#eb001b;"></i></span>
+                        <span class="pm-name">Mastercard</span>
+                    </div>
+                    <div class="payment-method-card" data-method="pse" onclick="selectPaymentMethod(this)">
+                        <span class="pm-icon"><i class="fas fa-university" style="color:#1a5276;"></i></span>
+                        <span class="pm-name">PSE</span>
+                    </div>
+                    <div class="payment-method-card" data-method="efecty" onclick="selectPaymentMethod(this)">
+                        <span class="pm-icon"><i class="fas fa-money-bill-wave" style="color:#27ae60;"></i></span>
+                        <span class="pm-name">Efecty</span>
+                    </div>
+                    <div class="payment-method-card" data-method="nequi" onclick="selectPaymentMethod(this)">
+                        <span class="pm-icon"><i class="fas fa-mobile-alt" style="color:#8b5cf6;"></i></span>
+                        <span class="pm-name">Nequi</span>
+                    </div>
+                    <div class="payment-method-card" data-method="daviplata" onclick="selectPaymentMethod(this)">
+                        <span class="pm-icon"><i class="fas fa-wallet" style="color:#ea580c;"></i></span>
+                        <span class="pm-name">Daviplata</span>
+                    </div>
+                </div>
+                <button class="btn-pay-now" id="btn-pay-now" disabled onclick="processPayment()">
+                    <i class="fas fa-lock"></i> Pagar Ahora
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h3>Contacto</h3>
+                <p><i class="fas fa-phone-alt"></i> +57 300 448 6406</p>
+                <p><i class="fas fa-envelope"></i> bogotenis.sport@gmail.com</p>
+                <p><i class="fas fa-clock"></i> Envios 24/7 a todo el pais</p>
+            </div>
+            <div class="footer-section">
+                <h3>Newsletter</h3>
+                <p>Suscribete y recibe ofertas exclusivas directamente en tu bandeja.</p>
+                <div class="newsletter-form">
+                    <input type="email" placeholder="Tu correo electronico">
+                    <button aria-label="Enviar newsletter"><i class="fas fa-paper-plane"></i></button>
+                </div>
+                <div class="payment-icons mt-3">
+                    <span class="badge bg-light text-dark mx-1">VISA</span>
+                    <span class="badge bg-light text-dark mx-1">Mastercard</span>
+                    <span class="badge bg-light text-dark mx-1">Efecty</span>
+                    <span class="badge bg-light text-dark mx-1">PSE</span>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 BOGOTENIS. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+    var IMG_BASE = "../static/img/";
+
+    var products = [
+        {
+            id: 1, marca: "Nike", nombre: "Air Max 270 React",
+            precio: 389900, stock: 15, categoria_id: 1, en_oferta: 1, estado: "disponible",
+            variantes: [
+                { color_nombre: "Negro", color_code: "#1a1a1a", imagen: "shoe1-1.png" },
+                { color_nombre: "Blanco", color_code: "#f5f5f5", imagen: "shoe1-1.png" }
+            ],
+            tallas: ["38", "39", "40", "41", "42", "43", "44"]
+        },
+        {
+            id: 2, marca: "Adidas", nombre: "Ultraboost 22",
+            precio: 459900, stock: 12, categoria_id: 3, en_oferta: 0, estado: "disponible",
+            variantes: [
+                { color_nombre: "Azul", color_code: "#1a5276", imagen: "shoe2-1.png" }
+            ],
+            tallas: ["38", "39", "40", "41", "42", "43"]
+        },
+        {
+            id: 3, marca: "New Balance", nombre: "574 Classic",
+            precio: 349900, stock: 10, categoria_id: 2, en_oferta: 1, estado: "disponible",
+            variantes: [
+                { color_nombre: "Gris", color_code: "#7f8c8d", imagen: "shoe3-1.png" },
+                { color_nombre: "Verde", color_code: "#27ae60", imagen: "shoe3-1.png" }
+            ],
+            tallas: ["38", "39", "40", "41", "42", "43", "44"]
+        },
+        {
+            id: 4, marca: "Puma", nombre: "RS-X Reinvention",
+            precio: 299900, stock: 8, categoria_id: 1, en_oferta: 0, estado: "disponible",
+            variantes: [
+                { color_nombre: "Multicolor", color_code: "#e74c3c", imagen: "shoe4-1.png" }
+            ],
+            tallas: ["39", "40", "41", "42", "43"]
+        },
+        {
+            id: 5, marca: "Reebok", nombre: "Classic Leather",
+            precio: 279900, stock: 14, categoria_id: 2, en_oferta: 1, estado: "disponible",
+            variantes: [
+                { color_nombre: "Negro", color_code: "#1a1a1a", imagen: "shoe5-1.png" },
+                { color_nombre: "Blanco", color_code: "#f5f5f5", imagen: "shoe5-2.png" }
+            ],
+            tallas: ["38", "39", "40", "41", "42", "43", "44"]
+        },
+        {
+            id: 6, marca: "Converse", nombre: "Chuck Taylor All Star",
+            precio: 199900, stock: 20, categoria_id: 2, en_oferta: 0, estado: "disponible",
+            variantes: [
+                { color_nombre: "Negro", color_code: "#1a1a1a", imagen: "shoe6-1.png" }
+            ],
+            tallas: ["36", "37", "38", "39", "40", "41", "42"]
+        },
+        {
+            id: 7, marca: "Vans", nombre: "Old Skool",
+            precio: 249900, stock: 18, categoria_id: 2, en_oferta: 1, estado: "disponible",
+            variantes: [
+                { color_nombre: "Negro/Rojo", color_code: "#2c3e50", imagen: "shoe7-1.png" }
+            ],
+            tallas: ["37", "38", "39", "40", "41", "42", "43"]
+        },
+        {
+            id: 8, marca: "Air Jordan", nombre: "Retro 4 Toro",
+            precio: 599900, stock: 6, categoria_id: 1, en_oferta: 0, estado: "disponible",
+            variantes: [
+                { color_nombre: "Negro", color_code: "#1a1a1a", imagen: "shoe8-1.png" },
+                { color_nombre: "Rojo", color_code: "#c0392b", imagen: "shoe8-2.png" }
+            ],
+            tallas: ["39", "40", "41", "42", "43", "44"]
+        },
+        {
+            id: 9, marca: "Nike", nombre: "Downshifter 12",
+            precio: 259900, stock: 22, categoria_id: 3, en_oferta: 0, estado: "disponible",
+            variantes: [
+                { color_nombre: "Azul", color_code: "#2c3e50", imagen: "shoe10-1.png" },
+                { color_nombre: "Gris", color_code: "#95a5a6", imagen: "shoe10-2.png" }
+            ],
+            tallas: ["38", "39", "40", "41", "42", "43", "44"]
+        },
+        {
+            id: 10, marca: "Adidas", nombre: "Court Lite 2",
+            precio: 229900, stock: 16, categoria_id: 4, en_oferta: 0, estado: "disponible",
+            variantes: [
+                { color_nombre: "Blanco", color_code: "#ecf0f1", imagen: "shoe11-1.png" }
+            ],
+            tallas: ["38", "39", "40", "41", "42", "43"]
+        },
+        {
+            id: 11, marca: "Under Armour", nombre: "Charged Assert 9",
+            precio: 319900, stock: 9, categoria_id: 3, en_oferta: 1, estado: "disponible",
+            variantes: [
+                { color_nombre: "Negro", color_code: "#1a1a1a", imagen: "shoe13-1.png" }
+            ],
+            tallas: ["39", "40", "41", "42", "43", "44"]
+        },
+        {
+            id: 12, marca: "Fila", nombre: "Disruptor II",
+            precio: 269900, stock: 11, categoria_id: 2, en_oferta: 0, estado: "disponible",
+            variantes: [
+                { color_nombre: "Blanco", color_code: "#f5f5f5", imagen: "shoe14-1.png" }
+            ],
+            tallas: ["37", "38", "39", "40", "41", "42"]
+        },
+        {
+            id: 13, marca: "Salomon", nombre: "Speedcross 6",
+            precio: 489900, stock: 7, categoria_id: 3, en_oferta: 0, estado: "disponible",
+            variantes: [
+                { color_nombre: "Negro/Verde", color_code: "#27ae60", imagen: "shoe15-1.png" }
+            ],
+            tallas: ["39", "40", "41", "42", "43", "44"]
+        }
+    ];
+
+    var offerProducts = products;
+
+    var cart = [];
+    var currentSelectedColor = '';
+    var currentSelectedSize = '';
+    var activeProduct = null;
+    var activePriceMode = 'regular';
+
+    var formatter = new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0
+    });
+
+    function imagenUrl(nombreArchivo) {
+        return IMG_BASE + nombreArchivo;
+    }
+
+    function filterShoes(categoryId, button) {
+        var grid = document.getElementById('main-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        document.querySelectorAll('.brand-filter-btn').forEach(function(btn) {
+            btn.classList.remove('active');
+        });
+        if (button) button.classList.add('active');
+
+        var filtered;
+        if (categoryId === 'all') {
+            filtered = products;
+        } else {
+            filtered = products.filter(function(p) {
+                return p.categoria_id === Number(categoryId);
+            });
+        }
+
+        if (filtered.length === 0) {
+            grid.innerHTML = '<p class="text-center text-muted">No hay productos en esta categoria.</p>';
+            return;
+        }
+
+        filtered.forEach(function(product) {
+            var defaultImage = imagenUrl(product.variantes[0].imagen);
+            var card = document.createElement('div');
+            card.className = 'product-card';
+            card.setAttribute('onclick', 'openProductModal(' + product.id + ', "regular")');
+
+            card.innerHTML =
+                '<div class="product-image">' +
+                    '<img src="' + defaultImage + '" alt="' + product.nombre + '" style="width: 100%; height: 100%; object-fit: contain;">' +
+                '</div>' +
+                '<div class="product-brand">' + product.marca + '</div>' +
+                '<h3 class="product-name">' + product.nombre + '</h3>' +
+                '<div class="product-price-row">' +
+                    '<span class="price-tag">' + formatter.format(product.precio) + '</span>' +
+                    '<button class="btn-add" onclick="quickAddToCart(' + product.id + ', \'regular\', event)">+</button>' +
+                '</div>';
+            grid.appendChild(card);
+        });
+    }
+
+    document.querySelectorAll('.brand-filter-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            filterShoes(btn.dataset.cat, btn);
+        });
+    });
+
+    function renderOffersGrid() {
+        var grid = document.getElementById('offers-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        var saleProducts = offerProducts.filter(function(p) { return p.en_oferta == 1; });
+
+        saleProducts.forEach(function(product) {
+            var defaultImage = imagenUrl(product.variantes[0].imagen);
+            var discountedPrice = product.precio * 0.80;
+
+            var card = document.createElement('div');
+            card.className = 'product-card offer-card';
+            card.setAttribute('onclick', 'openProductModal(' + product.id + ', "sale")');
+
+            card.innerHTML =
+                '<div class="product-image relative-box">' +
+                    '<span class="discount-pill">20% OFF</span>' +
+                    '<img src="' + defaultImage + '" alt="' + product.nombre + '" style="width: 100%; height: 100%; object-fit: contain;">' +
+                '</div>' +
+                '<div class="product-brand">' + product.marca + '</div>' +
+                '<h3 class="product-name">' + product.nombre + '</h3>' +
+                '<div class="product-price-row">' +
+                    '<div>' +
+                        '<span class="old-price-label">' + formatter.format(product.precio) + '</span>' +
+                        '<span class="price-tag sale-price d-block">' + formatter.format(discountedPrice) + '</span>' +
+                    '</div>' +
+                    '<button class="btn-add btn-sale-add" onclick="quickAddToCart(' + product.id + ', \'sale\', event)">+</button>' +
+                '</div>';
+            grid.appendChild(card);
+        });
+    }
+
+    function buscarProducto(productId) {
+        var fuente = (typeof products !== 'undefined' && products.length) ? products : offerProducts;
+        return fuente.find(function(p) { return p.id === productId; });
+    }
+
+    function quickAddToCart(productId, mode, event) {
+        event.stopPropagation();
+        var product = buscarProducto(productId);
+        if (!product) return;
+
+        var finalPrice = mode === 'sale' ? product.precio * 0.80 : product.precio;
+
+        cart.push({
+            product_id: product.id,
+            brand: product.marca,
+            name: product.nombre + (mode === 'sale' ? ' (% Oferta)' : ''),
+            price: finalPrice,
+            selectedColor: product.variantes[0].color_code,
+            color_name: product.variantes[0].color_nombre,
+            selectedSize: product.tallas[0],
+            size: product.tallas[0]
+        });
+        updateCartUI();
+        document.getElementById('btn-cart-toggle').click();
+    }
+
+    function openProductModal(productId, mode) {
+        var product = buscarProducto(productId);
+        if (!product) return;
+
+        activeProduct = product;
+        activePriceMode = mode;
+
+        document.getElementById('modal-brand').innerText = product.marca;
+        document.getElementById('modal-name').innerText = product.nombre + (mode === 'sale' ? ' (% Oferta)' : '');
+
+        var finalPrice = mode === 'sale' ? product.precio * 0.80 : product.precio;
+        document.getElementById('modal-price').innerText = formatter.format(finalPrice);
+
+        currentSelectedSize = product.tallas[0];
+        currentSelectedColor = product.variantes[0].color_code;
+
+        var colorContainer = document.getElementById('modal-colors');
+        colorContainer.innerHTML = '';
+
+        product.variantes.forEach(function(variante, idx) {
+            colorContainer.innerHTML +=
+                '<div class="color-option ' + (idx === 0 ? 'selected' : '') + '"' +
+                ' style="background-color: ' + variante.color_code + '"' +
+                ' title="' + variante.color_nombre + '"' +
+                ' onclick="changeProductColor(this, \'' + imagenUrl(variante.imagen) + '\', \'' + variante.color_code + '\', \'' + variante.color_nombre + '\')">' +
+                '</div>';
+        });
+
+        var viewer = document.getElementById('shoe-image-viewer');
+        viewer.innerHTML = '<img src="' + imagenUrl(product.variantes[0].imagen) + '" alt="Zapato" id="modal-main-shoe-image" style="width: 100%; height: 100%; object-fit: contain;">';
+
+        var sizeContainer = document.getElementById('modal-sizes');
+        sizeContainer.innerHTML = '';
+        product.tallas.forEach(function(talla, idx) {
+            sizeContainer.innerHTML +=
+                '<button class="size-option ' + (idx === 0 ? 'selected' : '') + '" onclick="selectSizeOption(this, \'' + talla + '\')">' +
+                'CO ' + talla +
+                '</button>';
+        });
+
+        var currentColorName = product.variantes[0].color_nombre;
+
+        document.getElementById('modal-add-to-cart-btn').onclick = function() {
+            var itemPrice = activePriceMode === 'sale' ? activeProduct.precio * 0.80 : activeProduct.precio;
+            cart.push({
+                product_id: activeProduct.id,
+                brand: activeProduct.marca,
+                name: activeProduct.nombre + (activePriceMode === 'sale' ? ' (% Oferta)' : ''),
+                price: itemPrice,
+                selectedColor: currentSelectedColor,
+                color_name: currentColorName,
+                selectedSize: currentSelectedSize,
+                size: currentSelectedSize
+            });
+            updateCartUI();
+            closeProductModal();
+            document.getElementById('btn-cart-toggle').click();
+        };
+
+        document.getElementById('product-modal').classList.add('active');
+    }
+
+    function changeProductColor(element, imagePath, colorCode, colorName) {
+        document.querySelectorAll('.color-option').forEach(function(el) { el.classList.remove('selected'); });
+        element.classList.add('selected');
+        currentSelectedColor = colorCode;
+        var imgEl = document.getElementById('modal-main-shoe-image');
+        if (imgEl) imgEl.src = imagePath;
+    }
+
+    function selectSizeOption(element, size) {
+        document.querySelectorAll('.size-option').forEach(function(el) { el.classList.remove('selected'); });
+        element.classList.add('selected');
+        currentSelectedSize = size;
+    }
+
+    function closeProductModal() {
+        document.getElementById('product-modal').classList.remove('active');
+    }
+
+    function updateCartUI() {
+        var container = document.getElementById('cart-items-container');
+        var totalCount = document.getElementById('cart-count');
+        var totalPrice = document.getElementById('cart-total-price');
+        if (!container) return;
+
+        var total = 0;
+        container.innerHTML = '';
+
+        cart.forEach(function(item, index) {
+            total += item.price;
+            container.innerHTML +=
+                '<div class="cart-item">' +
+                    '<div class="cart-item-details">' +
+                        '<div class="cart-item-title">' + item.brand + ' - ' + item.name + '</div>' +
+                        '<div class="cart-item-meta">' +
+                            'Talla: CO ' + item.selectedSize + ' | Color: <span class="cart-color-dot" style="background:' + item.selectedColor + ';"></span>' +
+                        '</div>' +
+                        '<div class="cart-item-price">' + formatter.format(item.price) + '</div>' +
+                    '</div>' +
+                    '<button class="cart-item-remove" title="Eliminar articulo" onclick="removeFromCart(' + index + ')">' +
+                        '<i class="fas fa-trash-alt"></i>' +
+                    '</button>' +
+                '</div>';
+        });
+
+        totalCount.innerText = cart.length;
+        totalPrice.innerText = formatter.format(total);
+    }
+
+    function removeFromCart(index) {
+        cart.splice(index, 1);
+        updateCartUI();
+    }
+
+    function finalizarPedido() {
+        if (cart.length === 0) { alert("El carrito esta vacio"); return; }
+
+        var orderBtn = document.getElementById('order-btn');
+        if (orderBtn.classList.contains('order-btn--loading') || orderBtn.classList.contains('order-btn--done')) return;
+
+        orderBtn.classList.add('order-btn--loading');
+
+        setTimeout(function() {
+            orderBtn.classList.remove('order-btn--loading');
+            orderBtn.classList.add('order-btn--done');
+            var checkEl = orderBtn.querySelector('.order-btn__check');
+            if (checkEl) checkEl.style.display = 'inline-flex';
+            var textEl = orderBtn.querySelector('.order-btn__text');
+            if (textEl) textEl.style.display = 'none';
+
+            openPaymentModal();
+
+            setTimeout(function() {
+                orderBtn.classList.remove('order-btn--done');
+                if (checkEl) checkEl.style.display = 'none';
+                if (textEl) textEl.style.display = 'inline';
+            }, 3000);
+        }, 2400);
+    }
+
+    var selectedPaymentMethod = '';
+
+    function openPaymentModal() {
+        var total = 0;
+        cart.forEach(function(item) { total += item.price; });
+        document.getElementById('payment-total-display').innerText = formatter.format(total);
+        selectedPaymentMethod = '';
+        document.querySelectorAll('.payment-method-card').forEach(function(c) { c.classList.remove('selected'); });
+        document.getElementById('btn-pay-now').disabled = true;
+        var body = document.getElementById('payment-body');
+        body.style.display = 'block';
+        document.getElementById('payment-modal').classList.add('active');
+    }
+
+    function closePaymentModal() {
+        document.getElementById('payment-modal').classList.remove('active');
+    }
+
+    function selectPaymentMethod(el) {
+        document.querySelectorAll('.payment-method-card').forEach(function(c) { c.classList.remove('selected'); });
+        el.classList.add('selected');
+        selectedPaymentMethod = el.dataset.method;
+        document.getElementById('btn-pay-now').disabled = false;
+    }
+
+    function processPayment() {
+        if (!selectedPaymentMethod || cart.length === 0) return;
+
+        var methodNames = {
+            visa: 'Visa', mastercard: 'Mastercard', pse: 'PSE',
+            efecty: 'Efecty', nequi: 'Nequi', daviplata: 'Daviplata'
+        };
+
+        var receiptId = 'BGT-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+        var now = new Date();
+        var dateStr = now.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+        var timeStr = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+
+        var total = 0;
+        var items = [];
+        cart.forEach(function(item) {
+            total += item.price;
+            items.push({
+                brand: item.brand,
+                name: item.name,
+                size: item.selectedSize,
+                color: item.color_name,
+                price: item.price
+            });
+        });
+
+        var jsPDF = window.jspdf.jsPDF;
+        var doc = new jsPDF();
+
+        // === HEADER ===
+        doc.setFillColor(15, 23, 42);
+        doc.rect(0, 0, 210, 45, 'F');
+
+        doc.setTextColor(250, 204, 21);
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('BOGOTENIS', 20, 22);
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Tu estilo, tu pasos.', 20, 32);
+
+        doc.setFontSize(9);
+        doc.text('Recibo de Compra', 155, 18);
+        doc.text(receiptId, 155, 25);
+        doc.text(dateStr + '  ' + timeStr, 155, 32);
+
+        // === SHOE DECORATION LINE ===
+        doc.setDrawColor(250, 204, 21);
+        doc.setLineWidth(0.8);
+        doc.line(20, 50, 190, 50);
+
+        doc.setTextColor(100, 116, 139);
+        doc.setFontSize(8);
+        doc.text('www.bogotenis.com  |  bogotenis.sport@gmail.com  |  +57 300 448 6406', 20, 56);
+
+        // === CLIENT INFO ===
+        doc.setTextColor(30, 41, 59);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Informacion del Pedido', 20, 68);
+
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 116, 139);
+        doc.text('Metodo de Pago: ' + (methodNames[selectedPaymentMethod] || selectedPaymentMethod), 20, 76);
+        doc.text('Estado: PAGADO', 120, 76);
+        doc.text('Numero de Recibo: ' + receiptId, 20, 83);
+
+        // === PRODUCTS TABLE HEADER ===
+        var tableTop = 95;
+        doc.setFillColor(248, 250, 252);
+        doc.rect(20, tableTop - 5, 170, 10, 'F');
+
+        doc.setTextColor(30, 41, 59);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('PRODUCTO', 22, tableTop + 2);
+        doc.text('TALLA', 110, tableTop + 2);
+        doc.text('COLOR', 130, tableTop + 2);
+        doc.text('PRECIO', 165, tableTop + 2);
+
+        // === PRODUCT ROWS ===
+        var y = tableTop + 12;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+
+        items.forEach(function(item, idx) {
+            if (idx % 2 === 0) {
+                doc.setFillColor(248, 250, 252);
+                doc.rect(20, y - 4, 170, 10, 'F');
+            }
+
+            doc.setTextColor(30, 41, 59);
+            var label = item.brand + ' ' + item.name;
+            if (label.length > 35) label = label.substring(0, 33) + '..';
+            doc.text(label, 22, y + 2);
+            doc.text('CO ' + item.size, 110, y + 2);
+            doc.setTextColor(100, 116, 139);
+            doc.text(item.color, 130, y + 2);
+            doc.setTextColor(30, 41, 59);
+            doc.text(formatter.format(item.price), 165, y + 2);
+
+            y += 10;
+        });
+
+        // === SEPARATOR ===
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.3);
+        doc.line(20, y + 2, 190, y + 2);
+
+        // === TOTAL ===
+        y += 10;
+        doc.setTextColor(30, 41, 59);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Subtotal:', 120, y);
+        doc.text(formatter.format(total), 165, y);
+
+        y += 8;
+        doc.text('Envio:', 120, y);
+        doc.setTextColor(22, 163, 74);
+        doc.text('GRATIS', 165, y);
+
+        y += 10;
+        doc.setFillColor(250, 204, 21);
+        doc.roundedRect(115, y - 6, 75, 14, 3, 3, 'F');
+        doc.setTextColor(15, 23, 42);
+        doc.setFontSize(12);
+        doc.text('TOTAL: ' + formatter.format(total), 120, y + 3);
+
+        // === SHOE ICONS DECORATION ===
+        y += 22;
+        doc.setTextColor(226, 232, 240);
+        doc.setFontSize(40);
+        doc.text('---', 30, y);
+        doc.text('---', 90, y);
+        doc.text('---', 150, y);
+
+        // === FOOTER ===
+        doc.setFillColor(15, 23, 42);
+        doc.rect(0, 262, 210, 35, 'F');
+
+        doc.setTextColor(250, 204, 21);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('BOGOTENIS', 20, 275);
+
+        doc.setTextColor(148, 163, 184);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Gracias por tu compra. Envios a todo el pais. Soporte 24/7.', 20, 282);
+        doc.text('Visa | Mastercard | PSE | Efecty | Nequi | Daviplata', 20, 288);
+
+        doc.setTextColor(255, 255, 255);
+        doc.text('Recibo generado automaticamente - ' + receiptId, 20, 294);
+
+        doc.save('Bogotenis-Recibo-' + receiptId + '.pdf');
+
+        // Show success in modal
+        var body = document.getElementById('payment-body');
+        body.innerHTML =
+            '<div class="payment-success-content">' +
+                '<div class="payment-success-icon"><i class="fas fa-check-circle"></i></div>' +
+                '<h3>¡Pago Exitoso!</h3>' +
+                '<p>Tu pedido ha sido procesado correctamente.</p>' +
+                '<div class="receipt-number"><i class="fas fa-receipt"></i> ' + receiptId + '</div>' +
+                '<br><br>' +
+                '<button class="btn-download-receipt" onclick="downloadReceiptAgain()"><i class="fas fa-file-pdf"></i> Descargar Recibo PDF</button>' +
+            '</div>';
+
+        window._lastReceiptDoc = doc;
+        window._lastReceiptId = receiptId;
+
+        cart = [];
+        updateCartUI();
+    }
+
+    function downloadReceiptAgain() {
+        if (window._lastReceiptDoc && window._lastReceiptId) {
+            window._lastReceiptDoc.save('Bogotenis-Recibo-' + window._lastReceiptId + '.pdf');
+        }
+    }
+
+    function openSupportModal(event) {
+        if (event) event.preventDefault();
+        var supportModal = document.getElementById('support-modal');
+        if (supportModal) supportModal.classList.add('active');
+    }
+
+    function closeSupportModal() {
+        var supportModal = document.getElementById('support-modal');
+        if (supportModal) supportModal.classList.remove('active');
+    }
+
+    window.addEventListener('click', function(e) {
+        var supportModal = document.getElementById('support-modal');
+        if (e.target === supportModal) closeSupportModal();
+        var paymentModal = document.getElementById('payment-modal');
+        if (e.target === paymentModal) closePaymentModal();
+    });
+
+    var btnCart = document.getElementById('btn-cart-toggle');
+    if (btnCart) btnCart.addEventListener('click', function() { document.getElementById('cart-sidebar').classList.add('active'); });
+
+    var btnCloseCart = document.getElementById('close-cart-sidebar');
+    if (btnCloseCart) btnCloseCart.addEventListener('click', function() { document.getElementById('cart-sidebar').classList.remove('active'); });
+
+    var btnClearCart = document.getElementById('clear-cart');
+    if (btnClearCart) btnClearCart.addEventListener('click', function() { cart = []; updateCartUI(); });
+
+    window.onload = function() {
+        if (document.getElementById('main-grid')) filterShoes('all');
+        if (document.getElementById('offers-grid')) renderOffersGrid();
+    };
+    </script>
+</body>
+</html>
