@@ -69,8 +69,8 @@ const products = [
         id: 8, marca: "Air Jordan", nombre: "Retro 4 Toro",
         precio: 599900, stock: 6, categoria_id: 1, en_oferta: 0, estado: "disponible",
         variantes: [
-            { color_nombre: "Negro", color_code: "#1a1a1a", imagen: "shoe8-1.png" },
-            { color_nombre: "Rojo", color_code: "#c0392b", imagen: "shoe8-2.png" }
+            { color_nombre: "Negro", color_code: "#c0392b", imagen: "shoe8-1.png" },
+           
         ],
         tallas: ["39", "40", "41", "42", "43", "44"]
     },
@@ -87,7 +87,7 @@ const products = [
         id: 10, marca: "Adidas", nombre: "Court Lite 2",
         precio: 229900, stock: 16, categoria_id: 4, en_oferta: 0, estado: "disponible",
         variantes: [
-            { color_nombre: "Blanco", color_code: "#ecf0f1", imagen: "shoe11-1.png" }
+            { color_nombre: "Blanco", color_code: "Adidas1", imagen: "shoe11-1.png" }
         ],
         tallas: ["38", "39", "40", "41", "42", "43"]
     },
@@ -111,7 +111,7 @@ const products = [
         id: 13, marca: "Salomon", nombre: "Speedcross 6",
         precio: 489900, stock: 7, categoria_id: 3, en_oferta: 0, estado: "disponible",
         variantes: [
-            { color_nombre: "Negro/Verde", color_code: "#27ae60", imagen: "shoe15-1.png" }
+            { color_nombre: "Negro/Verde", color_code: "#024b20", imagen: "shoe15-1.png" }
         ],
         tallas: ["39", "40", "41", "42", "43", "44"]
     }
