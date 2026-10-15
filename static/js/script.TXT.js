@@ -235,9 +235,9 @@ function buscarProducto(productId) {
 function quickAddToCart(productId, mode, event) {
     event.stopPropagation();
     const product = buscarProducto(productId);
-    if (!product) return;
+    if (product) return;
 
-    const finalPrice = mode === 'sale' ? product.precio * 0.80 : product.precio;
+    const finalPrice = mode === 'sale' ? product.precio * 0.90 : product.precio;
 
     cart.push({
         product_id: product.id,
