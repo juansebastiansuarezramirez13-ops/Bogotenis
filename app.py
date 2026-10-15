@@ -3,9 +3,13 @@ from flask_mysqldb import MySQL
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from decimal import Decimal
+import os
 
 app = Flask(__name__)
 app.secret_key = "cambia-esta-clave-por-una-segura"  # necesario para sesiones
+
+IMAGENES_DIR = os.path.join(app.root_path, "static", "img")
+EXTENSIONES_PERMITIDAS = {"png", "jpg", "jpeg", "webp", "gif"}
 
 # ---------------------------------------------------------------
 # Configuración de conexión con XAMPP / MySQL
@@ -445,7 +449,72 @@ def admin_suscriptores():
     cursor.execute("SELECT id, correo, fecha_registro FROM suscriptores ORDER BY fecha_registro DESC")
     suscriptores = cursor.fetchall()
     cursor.close()
-    return render_template("admin/suscriptores.html", suscriptores=suscriptores)
+    suscriptores_json = [
+        {
+            "id": s["id"],
+            "correo": s["correo"],
+            "fecha": s["fecha_registro"].strftime("%d/%m/%Y %H:%M") if s["fecha_registro"] else "",
+        }
+        for s in suscriptores
+    ]
+    return render_template("admin/suscriptores.html", suscriptores=suscriptores, suscriptores_json=suscriptores_json)
+
+
+# =================================================================
+# GESTOR DE IMAGENES
+# =================================================================
+@app.route("/admin/imagenes")
+@login_requerido
+@admin_requerido
+def admin_imagenes():
+    cursor = mysql.connection.cursor()
+    cursor.execute("""
+        SELECT v.id AS variante_id, v.producto_id, v.color_nombre, v.color_code,
+               v.imagen, v.orden, p.marca, p.nombre AS producto_nombre
+        FROM variantes_producto v
+        JOIN productos p ON p.id = v.producto_id
+        ORDER BY p.id, v.orden
+    """)
+    variantes = cursor.fetchall()
+    cursor.close()
+    for v in variantes:
+        v["existe"] = os.path.exists(os.path.join(IMAGENES_DIR, v["imagen"]))
+    return render_template("admin/imagenes.html", variantes=variantes)
+
+
+@app.route("/admin/imagenes/subir", methods=["POST"])
+@login_requerido
+@admin_requerido
+def admin_imagen_subir():
+    variante_id = request.form.get("variante_id")
+    archivo = request.files.get("archivo")
+    if not variante_id or not archivo or archivo.filename == "":
+        flash("Selecciona una imagen valida.", "danger")
+        return redirect(url_for("admin_imagenes"))
+
+    extension = archivo.filename.rsplit(".", 1)[-1].lower() if "." in archivo.filename else ""
+    if extension not in EXTENSIONES_PERMITIDAS:
+        flash("Formato no permitido. Usa png, jpg, jpeg, webp o gif.", "danger")
+        return redirect(url_for("admin_imagenes"))
+
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT imagen FROM variantes_producto WHERE id = %s", (variante_id,))
+    fila = cursor.fetchone()
+    if not fila:
+        cursor.close()
+        flash("Variante no encontrada.", "danger")
+        return redirect(url_for("admin_imagenes"))
+
+    base = os.path.splitext(fila["imagen"])[0]
+    nuevo_nombre = base + "." + extension
+    os.makedirs(IMAGENES_DIR, exist_ok=True)
+    archivo.save(os.path.join(IMAGENES_DIR, nuevo_nombre))
+
+    cursor.execute("UPDATE variantes_producto SET imagen = %s WHERE id = %s", (nuevo_nombre, variante_id))
+    mysql.connection.commit()
+    cursor.close()
+    flash("Imagen guardada como " + nuevo_nombre, "success")
+    return redirect(url_for("admin_imagenes"))
 
 
 if __name__ == "__main__":

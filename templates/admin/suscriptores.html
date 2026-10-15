@@ -37,12 +37,14 @@
 {% endblock %}
 
 {% block scripts %}
+<script id="suscriptores-data" type="application/json">{{ suscriptores_json|tojson }}</script>
 <script>
     function descargarSuscriptores() {
         var filas = [['ID', 'Correo', 'Fecha']];
-        {% for sub in suscriptores %}
-        filas.push(['{{ sub.id }}', '{{ sub.correo }}', '{{ sub.fecha_registro.strftime("%d/%m/%Y %H:%M") if sub.fecha_registro else "" }}']);
-        {% endfor %}
+        var datos = JSON.parse(document.getElementById('suscriptores-data').textContent);
+        datos.forEach(function(sub) {
+            filas.push([sub.id, sub.correo, sub.fecha]);
+        });
         var csv = filas.map(function(f) { return f.join(';'); }).join('\n');
         var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
         var link = document.createElement('a');
